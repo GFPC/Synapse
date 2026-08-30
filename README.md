@@ -1,5 +1,12 @@
 # Synapse — Collaborative Engineering Knowledge Base
 
+[![CI Status](https://github.com/GFPC/Synapse/actions/workflows/ci.yml/badge.svg)](https://github.com/GFPC/Synapse/actions/workflows/ci.yml)
+[![CD Status](https://github.com/GFPC/Synapse/actions/workflows/deploy.yml/badge.svg)](https://github.com/GFPC/Synapse/actions/workflows/deploy.yml)
+![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go&logoColor=white)
+![React Version](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+
 > High-performance collaborative graph workspace & engineering knowledge base.
 
 ---
