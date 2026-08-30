@@ -807,7 +807,7 @@ export const NodeDetailDrawer: React.FC = () => {
                       </a>
                     ) : (
                       <a
-                        href={att.storage_path || `http://localhost:3000/api/attachments/${att.id}/download`}
+                        href={att.storage_path || `/api/attachments/${att.id}/download`}
                         target="_blank"
                         rel="noreferrer"
                         className="px-2.5 py-1 bg-surface hover:bg-surface-3 text-text-main text-xs font-medium rounded border border-border"

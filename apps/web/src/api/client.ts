@@ -1,5 +1,26 @@
-export const API_BASE_URL = 'http://localhost:3000';
-export const WS_BASE_URL = 'ws://localhost:3000';
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    if (window.location.port === '5173' || window.location.port === '3001') {
+      return 'http://localhost:3000';
+    }
+    return '';
+  }
+  return '';
+};
+
+export const getWsBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    if (window.location.port === '5173' || window.location.port === '3001') {
+      return `${proto}//localhost:3000`;
+    }
+    return `${proto}//${window.location.host}`;
+  }
+  return 'ws://localhost:3000';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+export const WS_BASE_URL = getWsBaseUrl();
 
 export interface ApiResponse<T = any> {
   data: T;
@@ -108,7 +129,7 @@ class ApiClient {
                 this.clearTokens();
                 this.isRefreshing = false;
               }
-            } catch (_err) {
+            } catch {
               this.clearTokens();
               this.isRefreshing = false;
             }

@@ -202,10 +202,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
               : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
           }`}
-          title={backendConnected ? 'Go Backend Подключен (Порт 3000)' : 'Офлайн режим (Кликните для подключения)'}
+          title={backendConnected ? 'Go Backend Подключен (Онлайн)' : 'Офлайн режим (Кликните для авторизации)'}
         >
           <Server className="w-3.5 h-3.5" />
-          <span className="hidden lg:inline">{backendConnected ? 'Go API :3000' : 'Offline'}</span>
+          <span className="hidden lg:inline">{backendConnected ? 'Go API Online' : 'Offline'}</span>
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               backendConnected ? 'bg-emerald-400 shadow-glow-sm animate-pulse' : 'bg-amber-400'

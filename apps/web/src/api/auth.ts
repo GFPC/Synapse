@@ -46,7 +46,8 @@ export const authApi = {
 
   async checkHealth(): Promise<boolean> {
     try {
-      const res = await fetch('http://localhost:3000/health');
+      const url = apiClient ? '/health' : '/health';
+      const res = await fetch(url);
       return res.ok;
     } catch {
       return false;

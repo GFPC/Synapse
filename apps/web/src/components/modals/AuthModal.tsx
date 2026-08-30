@@ -73,7 +73,7 @@ export const AuthModal: React.FC = () => {
               <h3 className="text-base font-bold text-text-main">
                 {backendConnected ? 'Go Backend Подключен' : 'Авторизация & Бэкенд'}
               </h3>
-              <p className="text-[11px] text-text-muted">http://localhost:3000 (Echo + PostgreSQL)</p>
+              <p className="text-[11px] text-text-muted">Synapse Go API (Echo + PostgreSQL)</p>
             </div>
           </div>
           <button
@@ -101,7 +101,7 @@ export const AuthModal: React.FC = () => {
                 <AlertCircle className="w-4 h-4 text-amber-400" />
               )}
               <span>
-                {backendConnected ? 'Сервер активен (Port 3000)' : 'Сервер недоступен (Офлайн режим)'}
+                {backendConnected ? 'Сервер активен (Онлайн)' : 'Сервер недоступен (Офлайн режим)'}
               </span>
             </div>
             <span className="font-mono text-[10px] bg-surface/60 px-2 py-0.5 rounded border border-border">
