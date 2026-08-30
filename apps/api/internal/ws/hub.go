@@ -2,6 +2,7 @@ package ws
 
 import (
 	"encoding/json"
+	"sync"
 )
 
 type EventType string
@@ -29,6 +30,7 @@ type BroadcastMsg struct {
 }
 
 type Hub struct {
+	mu         sync.RWMutex
 	rooms      map[string]map[*Client]struct{} // projectID -> clients
 	broadcast  chan BroadcastMsg
 	register   chan *Client
@@ -48,11 +50,14 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
+			h.mu.Lock()
 			if _, ok := h.rooms[client.ProjectID]; !ok {
 				h.rooms[client.ProjectID] = make(map[*Client]struct{})
 			}
 			h.rooms[client.ProjectID][client] = struct{}{}
+			h.mu.Unlock()
 		case client := <-h.unregister:
+			h.mu.Lock()
 			if room, ok := h.rooms[client.ProjectID]; ok {
 				if _, ok := room[client]; ok {
 					delete(room, client)
@@ -62,7 +67,9 @@ func (h *Hub) Run() {
 					}
 				}
 			}
+			h.mu.Unlock()
 		case msg := <-h.broadcast:
+			h.mu.Lock()
 			if room, ok := h.rooms[msg.ProjectID]; ok {
 				for client := range room {
 					if client.ID != msg.ExcludeClientID {
@@ -78,8 +85,18 @@ func (h *Hub) Run() {
 					delete(h.rooms, msg.ProjectID)
 				}
 			}
+			h.mu.Unlock()
 		}
 	}
+}
+
+func (h *Hub) RoomClientCount(projectID string) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	if room, ok := h.rooms[projectID]; ok {
+		return len(room)
+	}
+	return 0
 }
 
 func (h *Hub) BroadcastToProject(projectID string, event Event, excludeClientID string) {

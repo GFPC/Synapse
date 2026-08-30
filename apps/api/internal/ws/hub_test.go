@@ -19,15 +19,15 @@ func TestHub_RegisterUnregister(t *testing.T) {
 	hub.register <- client
 	time.Sleep(10 * time.Millisecond) // wait for channel to process
 
-	if len(hub.rooms["p1"]) != 1 {
-		t.Errorf("Expected 1 client in room p1, got %d", len(hub.rooms["p1"]))
+	if hub.RoomClientCount("p1") != 1 {
+		t.Errorf("Expected 1 client in room p1, got %d", hub.RoomClientCount("p1"))
 	}
 
 	hub.unregister <- client
 	time.Sleep(10 * time.Millisecond)
 
-	if len(hub.rooms["p1"]) != 0 {
-		t.Errorf("Expected 0 clients in room p1, got %d", len(hub.rooms["p1"]))
+	if hub.RoomClientCount("p1") != 0 {
+		t.Errorf("Expected 0 clients in room p1, got %d", hub.RoomClientCount("p1"))
 	}
 }
 
@@ -93,7 +93,7 @@ func TestHub_SlowClientDropped(t *testing.T) {
 	hub.BroadcastToProject("p1", Event{Type: EventNodeCreated, Data: nil}, "")
 	time.Sleep(10 * time.Millisecond)
 
-	if len(hub.rooms["p1"]) != 0 {
+	if hub.RoomClientCount("p1") != 0 {
 		t.Errorf("Slow client should have been dropped")
 	}
 }
