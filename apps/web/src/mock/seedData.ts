@@ -14,8 +14,8 @@ import type {
 export const MOCK_USERS: User[] = [
   {
     id: 'user-1',
-    name: 'Григорий (Вы)',
-    email: 'greg@synapse.dev',
+    name: 'Lead Architect (Вы)',
+    email: 'architect@synapse.local',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     role: 'owner',
     created_at: 1718000000000,

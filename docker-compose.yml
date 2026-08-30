@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-synapse}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapse_pass}
       POSTGRES_DB: ${POSTGRES_DB:-synapse}
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,8 +21,6 @@ services:
       dockerfile: deploy/docker/Dockerfile.api
     container_name: synapse-api
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       - ENV=production
       - PORT=3000
