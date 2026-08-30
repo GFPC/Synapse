@@ -19,8 +19,8 @@ interface Props {
 }
 
 const TYPES: NodeType[] = [
-  'feature',
   'component',
+  'feature',
   'decision',
   'solution',
   'problem',
@@ -34,13 +34,33 @@ const TYPES: NodeType[] = [
   'log',
 ];
 
+const STATUSES = ['in_progress', 'completed', 'blocked', 'draft', 'accepted'];
+
 export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
   const { createNode } = useSynapseMobileStore();
-  const [type, setType] = useState<NodeType>('feature');
+  const [type, setType] = useState<NodeType>('component');
+  const [status, setStatus] = useState<string>('in_progress');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
+
+  // Benchmark specific fields
+  const [latency, setLatency] = useState('');
+  const [throughput, setThroughput] = useState('');
+  const [slo, setSlo] = useState('');
+
   const [loading, setLoading] = useState(false);
+
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setTags('');
+    setLatency('');
+    setThroughput('');
+    setSlo('');
+    setStatus('in_progress');
+    setType('component');
+  };
 
   const handleCreate = async () => {
     if (!title.trim()) return;
@@ -55,18 +75,25 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
       const posX = 150 + Math.floor(Math.random() * 300);
       const posY = 150 + Math.floor(Math.random() * 300);
 
+      const meta: Record<string, any> = {};
+      if (type === 'benchmark') {
+        if (latency.trim()) meta.p99_latency_ms = latency.trim();
+        if (throughput.trim()) meta.throughput = throughput.trim();
+        if (slo.trim()) meta.slo_target = slo.trim();
+      }
+
       await createNode({
         type,
+        status,
         title: title.trim(),
         content: content.trim(),
         tags: tagList,
+        meta,
         canvas_x: posX,
         canvas_y: posY,
       });
 
-      setTitle('');
-      setContent('');
-      setTags('');
+      resetForm();
       onClose();
     } catch (e) {
       console.warn('Failed to create node', e);
@@ -83,8 +110,12 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Create Architecture Node</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <Text style={styles.headerTitle}>CREATE ARCHITECTURE NODE</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -92,7 +123,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
             {/* Type Selector */}
             <Text style={styles.label}>NODE TYPE</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalRow}>
               {TYPES.map((t) => {
                 const conf = NODE_TYPE_CONFIG[t];
                 const isSelected = type === t;
@@ -122,21 +153,87 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
               })}
             </ScrollView>
 
+            {/* Status Selector */}
+            <Text style={styles.label}>STATUS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalRow}>
+              {STATUSES.map((s) => {
+                const isSelected = status === s;
+                return (
+                  <TouchableOpacity
+                    key={s}
+                    style={[
+                      styles.statusChip,
+                      isSelected && styles.statusChipActive,
+                    ]}
+                    onPress={() => setStatus(s)}
+                  >
+                    <Text
+                      style={[
+                        styles.statusChipText,
+                        isSelected && styles.statusChipTextActive,
+                      ]}
+                    >
+                      {s}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
             {/* Title Input */}
-            <Text style={styles.label}>NODE TITLE</Text>
+            <Text style={styles.label}>NODE TITLE *</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. High-Throughput Raft State Machine..."
+              placeholder="e.g. Distributed In-Memory Key-Value Store"
               placeholderTextColor={THEME.text4}
               value={title}
               onChangeText={setTitle}
             />
 
+            {/* Benchmark Specific Fields */}
+            {type === 'benchmark' && (
+              <View style={styles.benchmarkBox}>
+                <Text style={styles.boxTitle}>SLO & BENCHMARK METRICS</Text>
+                <View style={styles.benchInputsRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subLabel}>p99 LATENCY</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0.15ms"
+                      placeholderTextColor={THEME.text4}
+                      value={latency}
+                      onChangeText={setLatency}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subLabel}>THROUGHPUT</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="120k ops/sec"
+                      placeholderTextColor={THEME.text4}
+                      value={throughput}
+                      onChangeText={setThroughput}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subLabel}>SLO TARGET</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="< 1.0ms"
+                      placeholderTextColor={THEME.text4}
+                      value={slo}
+                      onChangeText={setSlo}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+
             {/* Content Input */}
             <Text style={styles.label}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Detail technical requirements, trade-offs, edge cases, SLOs..."
+              placeholder="Technical implementation details, constraints, design tradeoffs, dependencies..."
               placeholderTextColor={THEME.text4}
               value={content}
               onChangeText={setContent}
@@ -148,7 +245,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
             <Text style={styles.label}>TAGS (COMMA SEPARATED)</Text>
             <TextInput
               style={styles.input}
-              placeholder="core, grpc, consensus, cache"
+              placeholder="grpc, storage, latency, raft"
               placeholderTextColor={THEME.text4}
               value={tags}
               onChangeText={setTags}
@@ -161,9 +258,9 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
               disabled={!title.trim() || loading}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#09090B" />
+                <ActivityIndicator size="small" color="#000" />
               ) : (
-                <Text style={styles.submitBtnText}>⚡ Add to Architecture</Text>
+                <Text style={styles.submitBtnText}>⚡ Create Node</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
@@ -181,110 +278,156 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: THEME.surface1,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderWidth: 1,
     borderColor: THEME.border2,
     maxHeight: '90%',
-    paddingBottom: 30,
+    paddingBottom: 24,
   },
   handleBar: {
-    width: 38,
+    width: 36,
     height: 4,
     backgroundColor: THEME.surface4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginTop: 10,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 6,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: THEME.border,
   },
-  title: {
-    fontSize: 16,
+  headerTitle: {
+    fontFamily: 'monospace',
+    fontSize: 11,
     fontWeight: '700',
-    color: THEME.text1,
+    color: THEME.text3,
+    letterSpacing: 0.5,
   },
   closeBtn: {
-    padding: 6,
+    padding: 4,
   },
   closeBtnText: {
-    fontSize: 16,
+    fontSize: 14,
     color: THEME.text3,
   },
   body: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   label: {
     fontFamily: 'monospace',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
     color: THEME.text4,
     letterSpacing: 0.6,
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 6,
   },
-  typeRow: {
+  horizontalRow: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   typeChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: THEME.radius.pill,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
     borderWidth: 1,
-    marginRight: 8,
+    marginRight: 6,
   },
   typeIcon: {
-    fontSize: 12,
+    fontSize: 11,
   },
   typeText: {
-    fontSize: 12,
+    fontSize: 11,
     color: THEME.text3,
     fontWeight: '500',
+  },
+  statusChip: {
+    backgroundColor: THEME.surface2,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  statusChipActive: {
+    backgroundColor: THEME.accentDim,
+    borderColor: THEME.accentLine,
+  },
+  statusChipText: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    color: THEME.text3,
+  },
+  statusChipTextActive: {
+    color: THEME.accentBright,
+    fontWeight: '700',
+  },
+  benchmarkBox: {
+    backgroundColor: THEME.surface2,
+    borderRadius: 6,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    marginTop: 8,
+    gap: 6,
+  },
+  boxTitle: {
+    fontFamily: 'monospace',
+    fontSize: 9,
+    fontWeight: '700',
+    color: THEME.accentBright,
+  },
+  benchInputsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  subLabel: {
+    fontFamily: 'monospace',
+    fontSize: 8,
+    color: THEME.text4,
+    marginBottom: 3,
   },
   input: {
     backgroundColor: THEME.surface2,
     borderWidth: 1,
     borderColor: THEME.border,
-    borderRadius: THEME.radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     color: THEME.text1,
-    fontSize: 13,
+    fontSize: 12.5,
   },
   textArea: {
-    height: 90,
+    height: 80,
     textAlignVertical: 'top',
   },
   submitBtn: {
     backgroundColor: THEME.accent,
-    borderRadius: THEME.radius.pill,
-    paddingVertical: 13,
+    borderRadius: 8,
+    paddingVertical: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    shadowColor: THEME.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    marginTop: 18,
+    marginBottom: 16,
   },
   submitBtnDisabled: {
     opacity: 0.5,
   },
   submitBtnText: {
-    color: '#09090B',
-    fontSize: 14,
+    color: '#000',
+    fontSize: 13,
     fontWeight: '700',
   },
 });

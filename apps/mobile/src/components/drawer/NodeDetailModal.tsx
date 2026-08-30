@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { SynapseNode, NodeType, Comment } from '../../types';
 import { THEME, NODE_TYPE_CONFIG, RELATION_CONFIG, RelationConfig } from '../../theme/tokens';
@@ -20,6 +21,24 @@ interface Props {
   visible: boolean;
   onClose: () => void;
 }
+
+const TYPES: NodeType[] = [
+  'component',
+  'feature',
+  'decision',
+  'solution',
+  'problem',
+  'risk',
+  'benchmark',
+  'deployment',
+  'test',
+  'note',
+  'lesson',
+  'link',
+  'log',
+];
+
+const STATUSES = ['in_progress', 'completed', 'blocked', 'draft', 'accepted', 'closed'];
 
 const formatDate = (val?: string | number | null): string => {
   if (!val) return 'Recently';
@@ -58,15 +77,41 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
     toggleReaction,
     openCreateRelationModal,
     selectNode,
+    updateNode,
+    deleteNode,
   } = useSynapseMobileStore();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'relations' | 'comments' | 'meta'>('overview');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Edit form state
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editType, setEditType] = useState<NodeType>('component');
+  const [editStatus, setEditStatus] = useState('in_progress');
+  const [editTags, setEditTags] = useState('');
+  const [editLatency, setEditLatency] = useState('');
+  const [editThroughput, setEditThroughput] = useState('');
+  const [editSlo, setEditSlo] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Comments state
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   useEffect(() => {
     if (visible && node) {
       fetchComments(node.id);
+      setIsEditing(false);
+      setEditTitle(node.title || '');
+      setEditContent(node.content || '');
+      setEditType((node.type as NodeType) || 'component');
+      setEditStatus(node.status || 'in_progress');
+      setEditTags((node.tags || []).join(', '));
+      setEditLatency(node.meta?.p99_latency_ms || node.meta?.latency || '');
+      setEditThroughput(node.meta?.throughput || node.meta?.ops_sec || '');
+      setEditSlo(node.meta?.slo_target || '');
     }
   }, [visible, node?.id]);
 
@@ -83,6 +128,60 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
     : [];
 
   const comments: Comment[] = node ? commentsMap[node.id] || [] : [];
+
+  const handleSaveEdit = async () => {
+    if (!node || !editTitle.trim()) return;
+    setIsSaving(true);
+    try {
+      const tagList = editTags
+        .split(',')
+        .map((t) => t.trim().replace(/^#/, ''))
+        .filter(Boolean);
+
+      const meta: Record<string, any> = { ...(node.meta || {}) };
+      if (editType === 'benchmark') {
+        if (editLatency.trim()) meta.p99_latency_ms = editLatency.trim();
+        if (editThroughput.trim()) meta.throughput = editThroughput.trim();
+        if (editSlo.trim()) meta.slo_target = editSlo.trim();
+      }
+
+      await updateNode(node.id, {
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        type: editType,
+        status: editStatus,
+        tags: tagList,
+        meta,
+      });
+
+      setIsEditing(false);
+    } catch (e) {
+      console.warn('Failed to update node', e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!node) return;
+    Alert.alert(
+      'Delete Architecture Node',
+      `Are you sure you want to delete [${node.display_id}] ${node.title}? This will also delete related links.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            await deleteNode(node.id);
+            setIsDeleting(false);
+            onClose();
+          },
+        },
+      ]
+    );
+  };
 
   const handleAddComment = async () => {
     if (!node || !commentText.trim()) return;
@@ -126,263 +225,445 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                <Text style={styles.closeBtnText}>✕</Text>
-              </TouchableOpacity>
+              <View style={styles.headerRight}>
+                <TouchableOpacity
+                  style={[styles.actionHeaderBtn, isEditing && styles.actionHeaderBtnActive]}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  onPress={() => setIsEditing(!isEditing)}
+                >
+                  <Text style={[styles.actionHeaderBtnText, isEditing && styles.actionHeaderBtnTextActive]}>
+                    {isEditing ? 'Cancel' : 'Edit'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.closeBtn}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  onPress={onClose}
+                >
+                  <Text style={styles.closeBtnText}>✕</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Tab Navigation */}
-            <View style={styles.tabRow}>
-              <TouchableOpacity
-                style={[styles.tabBtn, activeTab === 'overview' ? styles.tabBtnActive : null]}
-                onPress={() => setActiveTab('overview')}
+            {/* EDIT MODE */}
+            {isEditing ? (
+              <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
               >
-                <Text style={[styles.tabText, activeTab === 'overview' ? styles.tabTextActive : null]}>
-                  Overview
-                </Text>
-              </TouchableOpacity>
+                <Text style={styles.editHeaderTitle}>EDIT NODE SPECIFICATION</Text>
 
-              <TouchableOpacity
-                style={[styles.tabBtn, activeTab === 'relations' ? styles.tabBtnActive : null]}
-                onPress={() => setActiveTab('relations')}
-              >
-                <Text style={[styles.tabText, activeTab === 'relations' ? styles.tabTextActive : null]}>
-                  Relations ({nodeRelations.length})
-                </Text>
-              </TouchableOpacity>
+                {/* Type Picker */}
+                <Text style={styles.fieldLabel}>NODE TYPE</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalRow}>
+                  {TYPES.map((t) => {
+                    const c = NODE_TYPE_CONFIG[t];
+                    const isSelected = editType === t;
+                    return (
+                      <TouchableOpacity
+                        key={t}
+                        style={[
+                          styles.typeChip,
+                          {
+                            backgroundColor: isSelected ? c.bg : THEME.surface2,
+                            borderColor: isSelected ? c.color : THEME.border,
+                          },
+                        ]}
+                        onPress={() => setEditType(t)}
+                      >
+                        <Text style={[styles.typeIcon, { color: c.color }]}>{c.iconText}</Text>
+                        <Text style={[styles.typeText, isSelected && { color: THEME.text1, fontWeight: '700' }]}>
+                          {c.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
 
-              <TouchableOpacity
-                style={[styles.tabBtn, activeTab === 'comments' ? styles.tabBtnActive : null]}
-                onPress={() => setActiveTab('comments')}
-              >
-                <Text style={[styles.tabText, activeTab === 'comments' ? styles.tabTextActive : null]}>
-                  Discussion ({comments.length})
-                </Text>
-              </TouchableOpacity>
+                {/* Status Picker */}
+                <Text style={styles.fieldLabel}>LIFECYCLE STATUS</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalRow}>
+                  {STATUSES.map((s) => {
+                    const isSelected = editStatus === s;
+                    return (
+                      <TouchableOpacity
+                        key={s}
+                        style={[styles.statusChip, isSelected && styles.statusChipActive]}
+                        onPress={() => setEditStatus(s)}
+                      >
+                        <Text style={[styles.statusChipText, isSelected && styles.statusChipTextActive]}>
+                          {s}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
 
-              <TouchableOpacity
-                style={[styles.tabBtn, activeTab === 'meta' ? styles.tabBtnActive : null]}
-                onPress={() => setActiveTab('meta')}
-              >
-                <Text style={[styles.tabText, activeTab === 'meta' ? styles.tabTextActive : null]}>
-                  Meta JSON
-                </Text>
-              </TouchableOpacity>
-            </View>
+                {/* Title Input */}
+                <Text style={styles.fieldLabel}>TITLE *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editTitle}
+                  onChangeText={setEditTitle}
+                  placeholder="Node title..."
+                  placeholderTextColor={THEME.text4}
+                />
 
-            {/* Main Content Area */}
-            <ScrollView
-              style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* TAB 1: OVERVIEW */}
-              {activeTab === 'overview' && (
-                <View style={styles.tabSection}>
-                  <Text style={styles.title}>{node.title}</Text>
-
-                  {isBenchmark && <BenchmarkMeter meta={node.meta} />}
-
-                  <View style={styles.cardBox}>
-                    <Text style={styles.boxTitle}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
-                    <Text style={styles.contentText}>
-                      {node.content || 'No architectural description provided for this node.'}
-                    </Text>
+                {/* Benchmark Metrics Inputs */}
+                {editType === 'benchmark' && (
+                  <View style={styles.benchmarkBox}>
+                    <Text style={styles.benchHeaderTitle}>BENCHMARK SLO GAUGES</Text>
+                    <View style={styles.benchInputsRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.subLabel}>p99 LATENCY</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={editLatency}
+                          onChangeText={setEditLatency}
+                          placeholder="0.12ms"
+                          placeholderTextColor={THEME.text4}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.subLabel}>THROUGHPUT</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={editThroughput}
+                          onChangeText={setEditThroughput}
+                          placeholder="25k ops/sec"
+                          placeholderTextColor={THEME.text4}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.subLabel}>SLO TARGET</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={editSlo}
+                          onChangeText={setEditSlo}
+                          placeholder="< 1.0ms"
+                          placeholderTextColor={THEME.text4}
+                        />
+                      </View>
+                    </View>
                   </View>
+                )}
 
-                  {/* Tags Section */}
-                  <View style={styles.cardBox}>
-                    <Text style={styles.boxTitle}>SYSTEM TAGS</Text>
-                    <View style={styles.tagsWrap}>
-                      {node.tags && node.tags.length > 0 ? (
-                        node.tags.map((t, i) => (
-                          <View key={i} style={styles.tagPill}>
-                            <Text style={styles.tagText}>#{t}</Text>
-                          </View>
-                        ))
+                {/* Content / Architectural Context */}
+                <Text style={styles.fieldLabel}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={editContent}
+                  onChangeText={setEditContent}
+                  placeholder="Detailed architectural context..."
+                  placeholderTextColor={THEME.text4}
+                  multiline
+                  numberOfLines={5}
+                />
+
+                {/* System Tags */}
+                <Text style={styles.fieldLabel}>TAGS (COMMA SEPARATED)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editTags}
+                  onChangeText={setEditTags}
+                  placeholder="fintech, grpc, lmax"
+                  placeholderTextColor={THEME.text4}
+                />
+
+                {/* Actions: Save & Delete */}
+                <View style={styles.editActionsRow}>
+                  <TouchableOpacity
+                    style={[styles.saveBtn, (!editTitle.trim() || isSaving) && styles.btnDisabled]}
+                    onPress={handleSaveEdit}
+                    disabled={!editTitle.trim() || isSaving}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator size="small" color="#000" />
+                    ) : (
+                      <Text style={styles.saveBtnText}>Save Changes</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
+                    onPress={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <ActivityIndicator size="small" color="#EF4444" />
+                    ) : (
+                      <Text style={styles.deleteBtnText}>Delete Node</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            ) : (
+              <>
+                {/* Tab Navigation */}
+                <View style={styles.tabRow}>
+                  <TouchableOpacity
+                    style={[styles.tabBtn, activeTab === 'overview' ? styles.tabBtnActive : null]}
+                    onPress={() => setActiveTab('overview')}
+                  >
+                    <Text style={[styles.tabText, activeTab === 'overview' ? styles.tabTextActive : null]}>
+                      Overview
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabBtn, activeTab === 'relations' ? styles.tabBtnActive : null]}
+                    onPress={() => setActiveTab('relations')}
+                  >
+                    <Text style={[styles.tabText, activeTab === 'relations' ? styles.tabTextActive : null]}>
+                      Relations ({nodeRelations.length})
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabBtn, activeTab === 'comments' ? styles.tabBtnActive : null]}
+                    onPress={() => setActiveTab('comments')}
+                  >
+                    <Text style={[styles.tabText, activeTab === 'comments' ? styles.tabTextActive : null]}>
+                      Discussion ({comments.length})
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabBtn, activeTab === 'meta' ? styles.tabBtnActive : null]}
+                    onPress={() => setActiveTab('meta')}
+                  >
+                    <Text style={[styles.tabText, activeTab === 'meta' ? styles.tabTextActive : null]}>
+                      Meta JSON
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Main Content Area */}
+                <ScrollView
+                  style={styles.scroll}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* TAB 1: OVERVIEW */}
+                  {activeTab === 'overview' && (
+                    <View style={styles.tabSection}>
+                      <Text style={styles.title}>{node.title}</Text>
+
+                      {isBenchmark && <BenchmarkMeter meta={node.meta} />}
+
+                      <View style={styles.cardBox}>
+                        <Text style={styles.boxTitle}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
+                        <Text style={styles.contentText}>
+                          {node.content || 'No architectural description provided for this node.'}
+                        </Text>
+                      </View>
+
+                      {/* Tags Section */}
+                      <View style={styles.cardBox}>
+                        <Text style={styles.boxTitle}>SYSTEM TAGS</Text>
+                        <View style={styles.tagsWrap}>
+                          {node.tags && node.tags.length > 0 ? (
+                            node.tags.map((t, i) => (
+                              <View key={i} style={styles.tagPill}>
+                                <Text style={styles.tagText}>#{t}</Text>
+                              </View>
+                            ))
+                          ) : (
+                            <Text style={styles.noDataText}>No tags assigned</Text>
+                          )}
+                        </View>
+                      </View>
+
+                      {/* Author & Timestamps */}
+                      <View style={styles.metaRow}>
+                        <Text style={styles.metaItem}>
+                          Author: {node.author?.name || 'Lead Architect'}
+                        </Text>
+                        <Text style={styles.metaItem}>
+                          Updated: {formatDate(node.updated_at)}
+                        </Text>
+                      </View>
+
+                      {/* Primary Edit Action Button */}
+                      <TouchableOpacity
+                        style={styles.overviewEditBtn}
+                        activeOpacity={0.75}
+                        onPress={() => setIsEditing(true)}
+                      >
+                        <Text style={styles.overviewEditBtnText}>✏️ Edit Node Specification</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* TAB 2: RELATIONS */}
+                  {activeTab === 'relations' && (
+                    <View style={styles.tabSection}>
+                      <View style={styles.relHeaderRow}>
+                        <Text style={styles.boxTitle}>CONNECTED GRAPH NODES</Text>
+                        <TouchableOpacity
+                          style={styles.addRelBtn}
+                          onPress={() => openCreateRelationModal(node)}
+                        >
+                          <Text style={styles.addRelBtnText}>＋ Add Relation</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {nodeRelations.length === 0 ? (
+                        <View style={styles.emptyRelBox}>
+                          <Text style={styles.emptyRelText}>
+                            This node has no active graph relationships yet.
+                          </Text>
+                        </View>
                       ) : (
-                        <Text style={styles.noDataText}>No tags assigned</Text>
+                        <View style={styles.relsList}>
+                          {nodeRelations.map((rel) => {
+                            const isOut = rel.from_node_id === node.id;
+                            const target = isOut ? nodeMap.get(rel.to_node_id) : nodeMap.get(rel.from_node_id);
+                            const relConf: RelationConfig =
+                              RELATION_CONFIG[rel.type as keyof typeof RELATION_CONFIG] ||
+                              RELATION_CONFIG.related;
+
+                            return (
+                              <TouchableOpacity
+                                key={rel.id}
+                                style={styles.relationCard}
+                                activeOpacity={0.75}
+                                onPress={() => target && selectNode(target.id)}
+                              >
+                                <View style={styles.relBadgeBox}>
+                                  <Text style={[styles.relDirectionText, { color: relConf.color }]}>
+                                    {isOut ? 'OUTGOING' : 'INCOMING'}
+                                  </Text>
+                                  <View
+                                    style={[
+                                      styles.relTypePill,
+                                      { backgroundColor: `${relConf.color}20`, borderColor: relConf.color },
+                                    ]}
+                                  >
+                                    <Text style={[styles.relTypeTitle, { color: relConf.color }]}>
+                                      {relConf.label}
+                                    </Text>
+                                  </View>
+                                </View>
+
+                                <Text style={styles.relTargetTitle}>
+                                  {target ? `[${target.display_id}] ${target.title}` : 'Remote Node'}
+                                </Text>
+
+                                {rel.note ? (
+                                  <Text style={styles.relNoteText}>Note: {rel.note}</Text>
+                                ) : null}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
                       )}
                     </View>
-                  </View>
+                  )}
 
-                  {/* Author & Timestamps */}
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaItem}>
-                      Author: {node.author?.name || 'Lead Architect'}
-                    </Text>
-                    <Text style={styles.metaItem}>
-                      Updated: {formatDate(node.updated_at)}
-                    </Text>
-                  </View>
-                </View>
-              )}
+                  {/* TAB 3: COMMENTS & REACTIONS */}
+                  {activeTab === 'comments' && (
+                    <View style={styles.tabSection}>
+                      <Text style={styles.boxTitle}>ARCHITECTURE PEER REVIEW</Text>
 
-              {/* TAB 2: RELATIONS */}
-              {activeTab === 'relations' && (
-                <View style={styles.tabSection}>
-                  <View style={styles.relHeaderRow}>
-                    <Text style={styles.boxTitle}>CONNECTED GRAPH NODES</Text>
-                    <TouchableOpacity
-                      style={styles.addRelBtn}
-                      onPress={() => openCreateRelationModal(node)}
-                    >
-                      <Text style={styles.addRelBtnText}>＋ Add Relation</Text>
-                    </TouchableOpacity>
-                  </View>
+                      {/* Add Comment Input */}
+                      <View style={styles.addCommentBox}>
+                        <TextInput
+                          style={styles.commentInput}
+                          placeholder="Add your architectural feedback..."
+                          placeholderTextColor={THEME.text4}
+                          value={commentText}
+                          onChangeText={setCommentText}
+                          multiline
+                        />
+                        <TouchableOpacity
+                          style={[
+                            styles.sendCommentBtn,
+                            !commentText.trim() ? styles.btnDisabled : null,
+                          ]}
+                          disabled={!commentText.trim() || isSubmittingComment}
+                          onPress={handleAddComment}
+                        >
+                          {isSubmittingComment ? (
+                            <ActivityIndicator size="small" color="#000" />
+                          ) : (
+                            <Text style={styles.sendCommentText}>Post Review</Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
 
-                  {nodeRelations.length === 0 ? (
-                    <View style={styles.emptyRelBox}>
-                      <Text style={styles.emptyRelText}>
-                        This node has no active graph relationships yet.
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.relsList}>
-                      {nodeRelations.map((rel) => {
-                        const isOut = rel.from_node_id === node.id;
-                        const target = isOut ? nodeMap.get(rel.to_node_id) : nodeMap.get(rel.from_node_id);
-                        const relConf: RelationConfig =
-                          RELATION_CONFIG[rel.type as keyof typeof RELATION_CONFIG] ||
-                          RELATION_CONFIG.related;
+                      {/* Comments Thread */}
+                      {comments.length === 0 ? (
+                        <View style={styles.emptyRelBox}>
+                          <Text style={styles.emptyRelText}>
+                            No discussion reviews yet. Be the first to comment!
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={styles.commentsList}>
+                          {comments.map((comm) => (
+                            <View key={comm.id} style={styles.commentItem}>
+                              <View style={styles.commentHead}>
+                                <View style={styles.commentAvatar}>
+                                  <Text style={styles.commentAvatarText}>LA</Text>
+                                </View>
+                                <View>
+                                  <Text style={styles.commentAuthor}>
+                                    {comm.author?.name || 'Lead Architect'}
+                                  </Text>
+                                  <Text style={styles.commentDate}>
+                                    {formatTime(comm.created_at)}
+                                  </Text>
+                                </View>
+                              </View>
 
-                        return (
-                          <TouchableOpacity
-                            key={rel.id}
-                            style={styles.relationCard}
-                            activeOpacity={0.75}
-                            onPress={() => target && selectNode(target.id)}
-                          >
-                            <View style={styles.relBadgeBox}>
-                              <Text style={[styles.relDirectionText, { color: relConf.color }]}>
-                                {isOut ? 'OUTGOING' : 'INCOMING'}
-                              </Text>
-                              <View
-                                style={[
-                                  styles.relTypePill,
-                                  { backgroundColor: `${relConf.color}20`, borderColor: relConf.color },
-                                ]}
-                              >
-                                <Text style={[styles.relTypeTitle, { color: relConf.color }]}>
-                                  {relConf.label}
-                                </Text>
+                              <Text style={styles.commentBody}>{comm.content}</Text>
+
+                              {/* Emoji Reactions Row */}
+                              <View style={styles.reactionsRow}>
+                                {['👍', '✅', '❓', '❤️'].map((emoji) => {
+                                  const count =
+                                    comm.reactions?.filter((r) => r.emoji === emoji).length || 0;
+                                  return (
+                                    <TouchableOpacity
+                                      key={emoji}
+                                      style={[
+                                        styles.emojiBtn,
+                                        count > 0 ? styles.emojiBtnActive : null,
+                                      ]}
+                                      onPress={() => toggleReaction(node.id, comm.id, emoji)}
+                                    >
+                                      <Text style={styles.emojiText}>{emoji}</Text>
+                                      {count > 0 && (
+                                        <Text style={styles.emojiCount}>{count}</Text>
+                                      )}
+                                    </TouchableOpacity>
+                                  );
+                                })}
                               </View>
                             </View>
-
-                            <Text style={styles.relTargetTitle}>
-                              {target ? `[${target.display_id}] ${target.title}` : 'Remote Node'}
-                            </Text>
-
-                            {rel.note ? (
-                              <Text style={styles.relNoteText}>Note: {rel.note}</Text>
-                            ) : null}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* TAB 3: COMMENTS & REACTIONS */}
-              {activeTab === 'comments' && (
-                <View style={styles.tabSection}>
-                  <Text style={styles.boxTitle}>ARCHITECTURE PEER REVIEW</Text>
-
-                  {/* Add Comment Input */}
-                  <View style={styles.addCommentBox}>
-                    <TextInput
-                      style={styles.commentInput}
-                      placeholder="Add your architectural feedback..."
-                      placeholderTextColor={THEME.text4}
-                      value={commentText}
-                      onChangeText={setCommentText}
-                      multiline
-                    />
-                    <TouchableOpacity
-                      style={[
-                        styles.sendCommentBtn,
-                        !commentText.trim() ? styles.btnDisabled : null,
-                      ]}
-                      disabled={!commentText.trim() || isSubmittingComment}
-                      onPress={handleAddComment}
-                    >
-                      {isSubmittingComment ? (
-                        <ActivityIndicator size="small" color="#000" />
-                      ) : (
-                        <Text style={styles.sendCommentText}>Post Review</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Comments Thread */}
-                  {comments.length === 0 ? (
-                    <View style={styles.emptyRelBox}>
-                      <Text style={styles.emptyRelText}>
-                        No discussion reviews yet. Be the first to comment!
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.commentsList}>
-                      {comments.map((comm) => (
-                        <View key={comm.id} style={styles.commentItem}>
-                          <View style={styles.commentHead}>
-                            <View style={styles.commentAvatar}>
-                              <Text style={styles.commentAvatarText}>LA</Text>
-                            </View>
-                            <View>
-                              <Text style={styles.commentAuthor}>
-                                {comm.author?.name || 'Lead Architect'}
-                              </Text>
-                              <Text style={styles.commentDate}>
-                                {formatTime(comm.created_at)}
-                              </Text>
-                            </View>
-                          </View>
-
-                          <Text style={styles.commentBody}>{comm.content}</Text>
-
-                          {/* Emoji Reactions Row */}
-                          <View style={styles.reactionsRow}>
-                            {['👍', '✅', '❓', '❤️'].map((emoji) => {
-                              const count =
-                                comm.reactions?.filter((r) => r.emoji === emoji).length || 0;
-                              return (
-                                <TouchableOpacity
-                                  key={emoji}
-                                  style={[
-                                    styles.emojiBtn,
-                                    count > 0 ? styles.emojiBtnActive : null,
-                                  ]}
-                                  onPress={() => toggleReaction(node.id, comm.id, emoji)}
-                                >
-                                  <Text style={styles.emojiText}>{emoji}</Text>
-                                  {count > 0 && (
-                                    <Text style={styles.emojiCount}>{count}</Text>
-                                  )}
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </View>
+                          ))}
                         </View>
-                      ))}
+                      )}
                     </View>
                   )}
-                </View>
-              )}
 
-              {/* TAB 4: META JSON */}
-              {activeTab === 'meta' && (
-                <View style={styles.tabSection}>
-                  <Text style={styles.boxTitle}>RAW NODE METADATA (JSON)</Text>
-                  <View style={styles.jsonBox}>
-                    <Text style={styles.jsonText}>
-                      {JSON.stringify(node.meta || {}, null, 2)}
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </ScrollView>
+                  {/* TAB 4: META JSON */}
+                  {activeTab === 'meta' && (
+                    <View style={styles.tabSection}>
+                      <Text style={styles.boxTitle}>RAW NODE METADATA (JSON)</Text>
+                      <View style={styles.jsonBox}>
+                        <Text style={styles.jsonText}>
+                          {JSON.stringify(node.meta || {}, null, 2)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </ScrollView>
+              </>
+            )}
           </View>
         ) : (
           <View style={styles.loadingContainer}>
@@ -421,7 +702,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    flex: 1,
+    flexShrink: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+    zIndex: 10,
+  },
+  overviewEditBtn: {
+    backgroundColor: THEME.surface2,
+    borderWidth: 1,
+    borderColor: THEME.border2,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  overviewEditBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: THEME.accentBright,
+  },
+  actionHeaderBtn: {
+    backgroundColor: THEME.surface2,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  actionHeaderBtnActive: {
+    backgroundColor: THEME.surface3,
+    borderColor: THEME.border2,
+  },
+  actionHeaderBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: THEME.accentBright,
+  },
+  actionHeaderBtnTextActive: {
+    color: THEME.text3,
   },
   typeBadge: {
     width: 32,
@@ -465,6 +788,133 @@ const styles = StyleSheet.create({
   closeBtnText: {
     fontSize: 13,
     color: THEME.text2,
+  },
+  editHeaderTitle: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '700',
+    color: THEME.accentBright,
+    marginBottom: 8,
+  },
+  fieldLabel: {
+    fontFamily: 'monospace',
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: THEME.text4,
+    letterSpacing: 0.5,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  horizontalRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  typeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginRight: 6,
+  },
+  typeText: {
+    fontSize: 11,
+    color: THEME.text3,
+    fontWeight: '500',
+  },
+  statusChip: {
+    backgroundColor: THEME.surface2,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  statusChipActive: {
+    backgroundColor: THEME.accentDim,
+    borderColor: THEME.accentLine,
+  },
+  statusChipText: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    color: THEME.text3,
+  },
+  statusChipTextActive: {
+    color: THEME.accentBright,
+    fontWeight: '700',
+  },
+  benchmarkBox: {
+    backgroundColor: THEME.surface2,
+    borderRadius: 6,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    marginTop: 8,
+    gap: 6,
+  },
+  benchHeaderTitle: {
+    fontFamily: 'monospace',
+    fontSize: 9,
+    fontWeight: '700',
+    color: THEME.accentBright,
+  },
+  benchInputsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  subLabel: {
+    fontFamily: 'monospace',
+    fontSize: 8,
+    color: THEME.text4,
+    marginBottom: 3,
+  },
+  input: {
+    backgroundColor: THEME.surface2,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: THEME.text1,
+    fontSize: 12.5,
+  },
+  textArea: {
+    height: 90,
+    textAlignVertical: 'top',
+  },
+  editActionsRow: {
+    marginTop: 20,
+    marginBottom: 30,
+    gap: 10,
+  },
+  saveBtn: {
+    backgroundColor: THEME.accent,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveBtnText: {
+    color: '#000',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  deleteBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteBtnText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '600',
   },
   tabRow: {
     flexDirection: 'row',
