@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   StatusBar,
+  Modal,
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
 import { InfiniteCanvas } from '../components/canvas/InfiniteCanvas';
@@ -15,7 +16,7 @@ import { NodeDetailModal } from '../components/drawer/NodeDetailModal';
 import { SearchModal } from '../components/modals/SearchModal';
 import { CanvasHUD } from '../components/layout/CanvasHUD';
 import { NodeType } from '../types';
-import { THEME, NODE_TYPE_CONFIG } from '../theme/tokens';
+import { THEME } from '../theme/tokens';
 
 const FILTER_TYPES: { id: NodeType | 'all'; label: string }[] = [
   { id: 'all', label: 'Все узлы' },
@@ -35,7 +36,9 @@ export const CanvasScreen: React.FC = () => {
     isLoading,
     isConnected,
     nodes,
+    projects,
     activeProject,
+    selectProject,
     selectedNodeId,
     selectNode,
     updateNodePosition,
@@ -46,6 +49,7 @@ export const CanvasScreen: React.FC = () => {
 
   const [zoomScale, setZoomScale] = useState(1.0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
 
   useEffect(() => {
     init();
@@ -64,20 +68,27 @@ export const CanvasScreen: React.FC = () => {
 
       {/* Header Bar */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
+        <TouchableOpacity
+          style={styles.headerLeft}
+          activeOpacity={0.7}
+          onPress={() => setIsProjectPickerOpen(true)}
+        >
           <View style={styles.logoBadge}>
             <Text style={styles.logoText}>⚡</Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <View style={styles.brandRow}>
               <Text style={styles.appName}>Synapse</Text>
               <Text style={styles.versionBadge}>Mobile v1.0</Text>
             </View>
-            <Text style={styles.projectName} numberOfLines={1}>
-              {activeProject ? activeProject.name : 'Подключение к Go API...'}
-            </Text>
+            <View style={styles.projectPickerRow}>
+              <Text style={styles.projectName} numberOfLines={1}>
+                {activeProject ? activeProject.name : 'Подключение...'}
+              </Text>
+              <Text style={styles.pickerChevron}>▾</Text>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.headerRight}>
           {/* Status Indicator */}
@@ -151,7 +162,7 @@ export const CanvasScreen: React.FC = () => {
         {isLoading && nodes.length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={THEME.accent} />
-            <Text style={styles.loadingText}>Загрузка графа архитектуры...</Text>
+            <Text style={styles.loadingText}>Загрузка архитектурного графа...</Text>
           </View>
         ) : (
           <InfiniteCanvas
@@ -188,6 +199,52 @@ export const CanvasScreen: React.FC = () => {
         visible={selectedNode !== null}
         onClose={() => selectNode(null)}
       />
+
+      {/* Project Picker Modal */}
+      <Modal
+        visible={isProjectPickerOpen}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setIsProjectPickerOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.pickerOverlay}
+          activeOpacity={1}
+          onPress={() => setIsProjectPickerOpen(false)}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerTitle}>ВЫБОР АРХИТЕКТУРНОГО ПРОЕКТА</Text>
+            {projects.map((proj) => {
+              const isCurrent = activeProject?.id === proj.id;
+              return (
+                <TouchableOpacity
+                  key={proj.id}
+                  style={[
+                    styles.pickerItem,
+                    isCurrent && styles.pickerItemActive,
+                  ]}
+                  onPress={() => {
+                    selectProject(proj.id);
+                    setIsProjectPickerOpen(false);
+                  }}
+                >
+                  <View style={styles.pickerItemHead}>
+                    <Text style={styles.pickerItemIcon}>📁</Text>
+                    <Text style={styles.pickerItemName} numberOfLines={1}>
+                      {proj.name}
+                    </Text>
+                  </View>
+                  {proj.description ? (
+                    <Text style={styles.pickerItemDesc} numberOfLines={2}>
+                      {proj.description}
+                    </Text>
+                  ) : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -243,10 +300,20 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 4,
   },
+  projectPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   projectName: {
     fontSize: 11,
-    color: THEME.text3,
-    maxWidth: 150,
+    color: THEME.text2,
+    fontWeight: '600',
+    maxWidth: 160,
+  },
+  pickerChevron: {
+    fontSize: 12,
+    color: THEME.accentBright,
   },
   headerRight: {
     flexDirection: 'row',
@@ -325,5 +392,57 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 13,
     color: THEME.text3,
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  pickerModal: {
+    backgroundColor: THEME.surface1,
+    borderRadius: THEME.radius.lg,
+    borderWidth: 1,
+    borderColor: THEME.border2,
+    padding: 16,
+    gap: 10,
+  },
+  pickerTitle: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    fontWeight: '700',
+    color: THEME.text4,
+    marginBottom: 4,
+  },
+  pickerItem: {
+    backgroundColor: THEME.surface2,
+    padding: 12,
+    borderRadius: THEME.radius.md,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  pickerItemActive: {
+    borderColor: THEME.accent,
+    backgroundColor: THEME.accentDim,
+  },
+  pickerItemHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  pickerItemIcon: {
+    fontSize: 14,
+  },
+  pickerItemName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: THEME.text1,
+    flex: 1,
+  },
+  pickerItemDesc: {
+    fontSize: 11,
+    color: THEME.text3,
+    lineHeight: 15,
   },
 });

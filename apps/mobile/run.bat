@@ -3,12 +3,13 @@ title Synapse Android Mobile Launcher
 setlocal
 
 set "ANDROID_HOME=D:\sdks\android_sdk"
-set "PATH=D:\sdks\android_sdk\platform-tools;C:\Users\greg\adb;%PATH%"
+set "PATH=C:\Users\greg\adb;D:\sdks\android_sdk\platform-tools;%PATH%"
 
 echo ===================================================
-echo   Starting Synapse Android on your phone...
-echo   SDK: %ANDROID_HOME%
+echo   Connecting to phone 192.168.0.103:43711 ...
 echo ===================================================
+
+adb -s 192.168.0.103:43711 reverse tcp:8081 tcp:8081
 
 cd /d "%~dp0"
 call npx expo start -a

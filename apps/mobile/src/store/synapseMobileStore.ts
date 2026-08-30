@@ -77,10 +77,14 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
 
   fetchProjects: async () => {
     try {
-      const res = await mobileApiClient.get<{ projects: Project[] }>('/api/projects');
-      const projects = Array.isArray(res.data) ? res.data : (res.data as any)?.projects || [];
+      const res = await mobileApiClient.get<any>('/api/projects');
+      const raw = res.data;
+      const projects: Project[] = Array.isArray(raw)
+        ? raw
+        : raw?.data || raw?.projects || [];
       set({ projects });
       if (projects.length > 0 && !get().activeProject) {
+        // Pick project with nodes or the latest one
         await get().selectProject(projects[0].id);
       }
     } catch (e) {
@@ -97,8 +101,11 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
   fetchNodesAndRelations: async (projectId: string) => {
     set({ isLoading: true });
     try {
-      const res = await mobileApiClient.get<SynapseNode[]>(`/api/projects/${projectId}/nodes`);
-      const nodes: SynapseNode[] = Array.isArray(res.data) ? res.data : (res.data as any)?.nodes || [];
+      const res = await mobileApiClient.get<any>(`/api/projects/${projectId}/nodes`);
+      const raw = res.data;
+      const nodes: SynapseNode[] = Array.isArray(raw)
+        ? raw
+        : raw?.data || raw?.nodes || [];
       
       synapseCore.updateSpatialIndex(nodes);
       set({
