@@ -16,13 +16,15 @@ build/
 *.so
 *.dylib
 
-# Node / Frontend
+# Node / Frontend / Mobile
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .vite/
+.expo/
+.expo-shared/
 
 # Go / Backend
 vendor/
