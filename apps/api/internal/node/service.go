@@ -28,8 +28,9 @@ func (s *NodeService) Create(ctx context.Context, projectID, userID string, inpu
 	if input.Visibility == "" {
 		input.Visibility = domain.VisibilityShared
 	}
-	if input.Status == "" {
-		input.Status = "in_progress"
+	if input.Status == nil || *input.Status == "" {
+		defaultStatus := "in_progress"
+		input.Status = &defaultStatus
 	}
 
 	node, err := s.repo.Create(ctx, projectID, userID, input)
