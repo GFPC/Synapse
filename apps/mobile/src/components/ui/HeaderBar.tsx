@@ -1,23 +1,35 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Project } from '../../types';
+import { Project, User } from '../../types';
 import { THEME } from '../../theme/tokens';
 
 interface Props {
   activeProject: Project | null;
   isConnected: boolean;
   serverStatus: 'online' | 'offline' | 'checking';
+  currentUser: User | null;
   onOpenProjectPicker: () => void;
   onOpenCreateNode: () => void;
+  onOpenAccount: () => void;
 }
 
 export const HeaderBar: React.FC<Props> = ({
   activeProject,
   isConnected,
-  serverStatus,
+  currentUser,
   onOpenProjectPicker,
   onOpenCreateNode,
+  onOpenAccount,
 }) => {
+  const userInitials = currentUser?.name
+    ? currentUser.name
+        .split(' ')
+        .map((p) => p[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'LA';
+
   return (
     <View style={styles.header}>
       {/* Brand & Project Switcher */}
@@ -36,14 +48,14 @@ export const HeaderBar: React.FC<Props> = ({
           </View>
           <View style={styles.projectRow}>
             <Text style={styles.projectName} numberOfLines={1}>
-              {activeProject ? activeProject.name : 'Подключение к серверу...'}
+              {activeProject ? activeProject.name : 'Connecting to server...'}
             </Text>
             <Text style={styles.chevron}>▾</Text>
           </View>
         </View>
       </TouchableOpacity>
 
-      {/* Right Actions: Create & Status */}
+      {/* Right Actions: Create, Live Status, Profile */}
       <View style={styles.headerRight}>
         <TouchableOpacity
           style={styles.createBtn}
@@ -51,7 +63,7 @@ export const HeaderBar: React.FC<Props> = ({
           onPress={onOpenCreateNode}
         >
           <Text style={styles.createBtnIcon}>＋</Text>
-          <Text style={styles.createBtnText}>Узел</Text>
+          <Text style={styles.createBtnText}>Node</Text>
         </TouchableOpacity>
 
         {/* Live Server Indicator */}
@@ -79,6 +91,15 @@ export const HeaderBar: React.FC<Props> = ({
             {isConnected ? 'Live' : 'Sync'}
           </Text>
         </View>
+
+        {/* Profile Avatar Button */}
+        <TouchableOpacity
+          style={styles.profileAvatar}
+          activeOpacity={0.75}
+          onPress={onOpenAccount}
+        >
+          <Text style={styles.profileAvatarText}>{userInitials}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -143,7 +164,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: THEME.text2,
     fontWeight: '600',
-    maxWidth: 145,
+    maxWidth: 130,
   },
   chevron: {
     fontSize: 10,
@@ -161,17 +182,17 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.surface3,
     borderWidth: 1,
     borderColor: THEME.border2,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: THEME.radius.pill,
   },
   createBtnIcon: {
-    fontSize: 12,
+    fontSize: 11,
     color: THEME.accentBright,
     fontWeight: '700',
   },
   createBtnText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
     color: THEME.text1,
   },
@@ -179,19 +200,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 7,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: THEME.radius.pill,
     borderWidth: 1,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   statusText: {
     fontFamily: 'monospace',
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '700',
+  },
+  profileAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: THEME.surface3,
+    borderWidth: 1,
+    borderColor: THEME.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileAvatarText: {
+    fontFamily: 'monospace',
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: THEME.accentBright,
   },
 });

@@ -8,7 +8,7 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
-import { SynapseNode, RelationType } from '../../types';
+import { RelationType } from '../../types';
 import { THEME, RELATION_CONFIG, RelationConfig } from '../../theme/tokens';
 import { useSynapseMobileStore } from '../../store/synapseMobileStore';
 
@@ -51,7 +51,7 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <View style={styles.header}>
-            <Text style={styles.title}>СОЗДАНИЕ СВЯЗИ В ГРАФЕ</Text>
+            <Text style={styles.title}>CREATE GRAPH RELATION</Text>
             <TouchableOpacity onPress={onClose}>
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
@@ -60,7 +60,7 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
             {/* Source Node Info */}
             <View style={styles.sourceBox}>
-              <Text style={styles.label}>ИСХОДНЫЙ УЗЕЛ</Text>
+              <Text style={styles.label}>SOURCE NODE</Text>
               <Text style={styles.sourceTitle}>
                 [{relationSourceNode?.display_id}] {relationSourceNode?.title}
               </Text>
@@ -68,7 +68,7 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
 
             {/* Relation Type Picker */}
             <View style={styles.field}>
-              <Text style={styles.label}>ТИП СВЯЗИ</Text>
+              <Text style={styles.label}>RELATION TYPE</Text>
               <View style={styles.relTypesWrap}>
                 {(Object.keys(RELATION_CONFIG) as RelationType[]).map((rType) => {
                   const conf: RelationConfig = RELATION_CONFIG[rType];
@@ -95,7 +95,7 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
 
             {/* Target Node Picker */}
             <View style={styles.field}>
-              <Text style={styles.label}>ЦЕЛЕВОЙ УЗЕЛ</Text>
+              <Text style={styles.label}>TARGET NODE</Text>
               <ScrollView style={styles.targetList} nestedScrollEnabled>
                 {availableTargets.map((target) => {
                   const isSelected = selectedTargetId === target.id;
@@ -123,10 +123,10 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
 
             {/* Optional Note */}
             <View style={styles.field}>
-              <Text style={styles.label}>ЗАМЕТКА (ОПЦИОНАЛЬНО)</Text>
+              <Text style={styles.label}>NOTE / CONTEXT (OPTIONAL)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Контекст или причина связывания..."
+                placeholder="Reason or technical context for this link..."
                 placeholderTextColor={THEME.text4}
                 value={note}
                 onChangeText={setNote}
@@ -137,7 +137,7 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
           {/* Action Buttons */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>Отмена</Text>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -147,7 +147,7 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
               disabled={!selectedTargetId || isSubmitting}
               onPress={handleSubmit}
             >
-              <Text style={styles.submitBtnText}>Создать связь</Text>
+              <Text style={styles.submitBtnText}>Create Relation</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -49,7 +49,7 @@ export const GlobalSearchScreen: React.FC = () => {
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.input}
-            placeholder="Поиск по всем ADR, компонентам, метрикам..."
+            placeholder="Search ADRs, components, benchmarks..."
             placeholderTextColor={THEME.text4}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -87,19 +87,19 @@ export const GlobalSearchScreen: React.FC = () => {
       {isSearching ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={THEME.accent} />
-          <Text style={styles.loadingText}>Полнотекстовый поиск PostgreSQL FTS...</Text>
+          <Text style={styles.loadingText}>Full-text PostgreSQL tsvector search...</Text>
         </View>
       ) : searchQuery.trim().length < 2 ? (
         <EmptyState
           icon="⚡"
-          title="Быстрый поиск знаний"
-          description="Введите ключевые слова архитектуры, номер ADR или название микросервиса"
+          title="Instant Architecture Search"
+          description="Type keywords, ADR numbers, or microservice component names to search"
         />
       ) : filteredResults.length === 0 ? (
         <EmptyState
           icon="🔍"
-          title="Ничего не найдено"
-          description={`По запросу «${searchQuery}» совпадений в базе знаний нет`}
+          title="No Results Found"
+          description={`No matching knowledge nodes found for "${searchQuery}"`}
         />
       ) : (
         <ScrollView
@@ -108,7 +108,7 @@ export const GlobalSearchScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.resultsCount}>
-            НАЙДЕНО: {filteredResults.length} РЕЗУЛЬТАТОВ
+            FOUND {filteredResults.length} MATCHING NODES
           </Text>
 
           {filteredResults.map((item: SearchResult, idx: number) => {

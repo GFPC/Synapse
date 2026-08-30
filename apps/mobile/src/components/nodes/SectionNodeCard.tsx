@@ -30,7 +30,7 @@ export const SectionNodeCard: React.FC<Props> = ({
   );
 
   const statusColor =
-    node.status === 'completed' || node.status === 'closed'
+    node.status === 'completed' || node.status === 'closed' || node.status === 'accepted'
       ? THEME.status.ok
       : node.status === 'blocked'
       ? THEME.status.crit
@@ -116,14 +116,14 @@ export const SectionNodeCard: React.FC<Props> = ({
                   {isOut ? '↳' : '↲'} {relConf.label}:
                 </Text>
                 <Text style={styles.relTargetTitle} numberOfLines={1}>
-                  {target ? `[${target.display_id}] ${target.title}` : 'Узел графа'}
+                  {target ? `[${target.display_id}] ${target.title}` : 'Graph Node'}
                 </Text>
               </View>
             );
           })}
           {nodeRelations.length > 2 && (
             <Text style={styles.moreRelsText}>
-              + еще {nodeRelations.length - 2} связей
+              + {nodeRelations.length - 2} more relations
             </Text>
           )}
         </View>
@@ -140,7 +140,7 @@ export const SectionNodeCard: React.FC<Props> = ({
             ))
           ) : (
             <View style={styles.tagPill}>
-              <Text style={styles.tagText}>#system</Text>
+              <Text style={styles.tagText}>#architecture</Text>
             </View>
           )}
         </View>

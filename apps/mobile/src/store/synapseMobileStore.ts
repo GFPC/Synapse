@@ -4,6 +4,8 @@ import {
   NodeRelation,
   NodeType,
   User,
+  UserStats,
+  AppSettings,
   Project,
   Comment,
   MainTabType,
@@ -29,6 +31,8 @@ interface SynapseMobileState {
   serverStatus: 'online' | 'offline' | 'checking';
   serverLatencyMs: number;
   currentUser: User | null;
+  userStats: UserStats;
+  settings: AppSettings;
 
   // Projects
   projects: Project[];
@@ -82,6 +86,10 @@ interface SynapseMobileState {
   setSearchQuery: (q: string) => void;
   performSearch: (q: string) => Promise<void>;
 
+  // Settings & Preferences
+  updateSettings: (partial: Partial<AppSettings>) => void;
+  clearLocalCache: () => Promise<void>;
+
   // UI state setters
   selectNode: (nodeId: string | null) => void;
   setTypeFilter: (filter: NodeType | 'all') => void;
@@ -104,11 +112,28 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
   serverStatus: 'checking',
   serverLatencyMs: 0,
   currentUser: {
-    id: 'user-1',
-    name: 'Lead Architect',
+    id: 'usr-arch-01',
+    name: 'Lead System Architect',
     email: 'architect@synapse.local',
     role: 'owner',
-    created_at: Date.now(),
+    created_at: Date.now() - 86400000 * 45,
+  },
+  userStats: {
+    authored_nodes_count: 23,
+    managed_projects_count: 2,
+    decisions_count: 5,
+    comments_count: 14,
+  },
+  settings: {
+    apiBaseUrl: 'http://87.58.204.138',
+    wsBaseUrl: 'ws://87.58.204.138/ws',
+    autoLayoutAlgorithm: 'hierarchical',
+    cardDensity: 'standard',
+    themeMode: 'obsidian',
+    enableLiveWs: true,
+    enableNotifications: true,
+    monospaceCode: true,
+    offlineCacheEnabled: true,
   },
 
   projects: [],
@@ -194,7 +219,7 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
 
     // Connect to Live WebSocket
     const token = mobileApiClient.getAccessToken();
-    if (token) {
+    if (token && get().settings.enableLiveWs) {
       synapseWS.connect(token, projectId);
       synapseWS.subscribe((event: WSEvent) => {
         if (event.type === 'node_created' && event.data) {
@@ -401,6 +426,16 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
       console.warn('Search failed', e);
       set({ searchResults: [], isSearching: false });
     }
+  },
+
+  updateSettings: (partial) =>
+    set((state) => ({
+      settings: { ...state.settings, ...partial },
+    })),
+
+  clearLocalCache: async () => {
+    // Reset memory cache
+    set({ commentsMap: {} });
   },
 
   selectNode: (nodeId: string | null) => set({ selectedNodeId: nodeId }),

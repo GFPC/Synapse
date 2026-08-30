@@ -35,7 +35,7 @@ export const MetricsAdrScreen: React.FC = () => {
             onPress={() => setActiveTab('all')}
           >
             <Text style={[styles.segmentText, activeTab === 'all' && styles.segmentTextActive]}>
-              Все метрики ({adrNodes.length + benchmarkNodes.length + riskNodes.length})
+              All Metrics ({adrNodes.length + benchmarkNodes.length + riskNodes.length})
             </Text>
           </TouchableOpacity>
 
@@ -44,7 +44,7 @@ export const MetricsAdrScreen: React.FC = () => {
             onPress={() => setActiveTab('adr')}
           >
             <Text style={[styles.segmentText, activeTab === 'adr' && styles.segmentTextActive]}>
-              ◆ ADR ({adrNodes.length})
+              ◆ ADR Decisions ({adrNodes.length})
             </Text>
           </TouchableOpacity>
 
@@ -53,7 +53,7 @@ export const MetricsAdrScreen: React.FC = () => {
             onPress={() => setActiveTab('benchmarks')}
           >
             <Text style={[styles.segmentText, activeTab === 'benchmarks' && styles.segmentTextActive]}>
-              📊 Бенчмарки ({benchmarkNodes.length})
+              📊 Benchmarks ({benchmarkNodes.length})
             </Text>
           </TouchableOpacity>
 
@@ -62,7 +62,7 @@ export const MetricsAdrScreen: React.FC = () => {
             onPress={() => setActiveTab('risks')}
           >
             <Text style={[styles.segmentText, activeTab === 'risks' && styles.segmentTextActive]}>
-              ⚡ Риски ({riskNodes.length})
+              ⚡ Risks & Hazards ({riskNodes.length})
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -79,7 +79,7 @@ export const MetricsAdrScreen: React.FC = () => {
             <View style={styles.sectionHeader}>
               <View style={styles.headerTitleRow}>
                 <Text style={styles.sectionIcon}>🟣</Text>
-                <Text style={styles.sectionTitle}>Архитектурные Решения (ADR)</Text>
+                <Text style={styles.sectionTitle}>Architecture Decision Records (ADR)</Text>
               </View>
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{adrNodes.length}</Text>
@@ -89,9 +89,9 @@ export const MetricsAdrScreen: React.FC = () => {
             {adrNodes.length === 0 ? (
               <EmptyState
                 icon="◆"
-                title="Нет ADR решений"
-                description="Создайте первое архитектурное решение (ADR)"
-                actionText="＋ Создать ADR"
+                title="No ADR Decisions"
+                description="Create the first architecture decision record for this project"
+                actionText="＋ Create ADR"
                 onAction={openCreateNodeModal}
               />
             ) : (
@@ -119,9 +119,9 @@ export const MetricsAdrScreen: React.FC = () => {
                     ) : null}
                     <View style={styles.adrFooter}>
                       <Text style={styles.adrAuthor}>
-                        Автор: {node.author?.name || 'Lead Architect'}
+                        Author: {node.author?.name || 'Lead Architect'}
                       </Text>
-                      <Text style={styles.openHint}>Подробнее →</Text>
+                      <Text style={styles.openHint}>Details →</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -136,7 +136,7 @@ export const MetricsAdrScreen: React.FC = () => {
             <View style={styles.sectionHeader}>
               <View style={styles.headerTitleRow}>
                 <Text style={styles.sectionIcon}>📊</Text>
-                <Text style={styles.sectionTitle}>Бенчмарки и Нагрузочные Тесты</Text>
+                <Text style={styles.sectionTitle}>Performance Benchmarks & Load Tests</Text>
               </View>
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{benchmarkNodes.length}</Text>
@@ -146,8 +146,8 @@ export const MetricsAdrScreen: React.FC = () => {
             {benchmarkNodes.length === 0 ? (
               <EmptyState
                 icon="📊"
-                title="Нет результатов тестов"
-                description="Добавьте результаты бенчмарков и замеров p99"
+                title="No Benchmark Results"
+                description="Add latency p99 and throughput test benchmarks"
               />
             ) : (
               <View style={styles.cardsList}>
@@ -182,7 +182,7 @@ export const MetricsAdrScreen: React.FC = () => {
             <View style={styles.sectionHeader}>
               <View style={styles.headerTitleRow}>
                 <Text style={styles.sectionIcon}>⚡</Text>
-                <Text style={styles.sectionTitle}>Технические Риски и Угрозы</Text>
+                <Text style={styles.sectionTitle}>Technical Risks & Failure Modes</Text>
               </View>
               <View style={[styles.countBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
                 <Text style={[styles.countText, { color: '#EF4444' }]}>{riskNodes.length}</Text>
@@ -192,8 +192,8 @@ export const MetricsAdrScreen: React.FC = () => {
             {riskNodes.length === 0 ? (
               <EmptyState
                 icon="🛡️"
-                title="Критических рисков нет"
-                description="Все известные архитектурные риски устранены"
+                title="No Active Critical Risks"
+                description="All identified architectural hazards have been mitigated"
               />
             ) : (
               <View style={styles.cardsList}>

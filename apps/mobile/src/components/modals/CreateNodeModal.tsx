@@ -12,7 +12,6 @@ import {
 import { NodeType } from '../../types';
 import { THEME, NODE_TYPE_CONFIG } from '../../theme/tokens';
 import { useSynapseMobileStore } from '../../store/synapseMobileStore';
-import { mobileApiClient } from '../../api/client';
 
 interface Props {
   visible: boolean;
@@ -31,10 +30,12 @@ const TYPES: NodeType[] = [
   'test',
   'note',
   'lesson',
+  'link',
+  'log',
 ];
 
 export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
-  const { activeProject, fetchNodesAndRelations } = useSynapseMobileStore();
+  const { createNode } = useSynapseMobileStore();
   const [type, setType] = useState<NodeType>('feature');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -42,7 +43,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
-    if (!activeProject || !title.trim()) return;
+    if (!title.trim()) return;
 
     setLoading(true);
     try {
@@ -51,11 +52,10 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
         .map((t) => t.trim().replace(/^#/, ''))
         .filter(Boolean);
 
-      // Place new node at a random spot or near center
       const posX = 150 + Math.floor(Math.random() * 300);
       const posY = 150 + Math.floor(Math.random() * 300);
 
-      await mobileApiClient.post(`/api/projects/${activeProject.id}/nodes`, {
+      await createNode({
         type,
         title: title.trim(),
         content: content.trim(),
@@ -64,7 +64,6 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
         canvas_y: posY,
       });
 
-      await fetchNodesAndRelations(activeProject.id);
       setTitle('');
       setContent('');
       setTags('');
@@ -84,7 +83,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Создать архитектурный узел</Text>
+            <Text style={styles.title}>Create Architecture Node</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
@@ -92,7 +91,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
             {/* Type Selector */}
-            <Text style={styles.label}>ТИП УЗЛА</Text>
+            <Text style={styles.label}>NODE TYPE</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeRow}>
               {TYPES.map((t) => {
                 const conf = NODE_TYPE_CONFIG[t];
@@ -124,20 +123,20 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
             </ScrollView>
 
             {/* Title Input */}
-            <Text style={styles.label}>ЗАГОЛОВОК УЗЛА</Text>
+            <Text style={styles.label}>NODE TITLE</Text>
             <TextInput
               style={styles.input}
-              placeholder="Напр: Distributed Transaction Coordinator..."
+              placeholder="e.g. High-Throughput Raft State Machine..."
               placeholderTextColor={THEME.text4}
               value={title}
               onChangeText={setTitle}
             />
 
             {/* Content Input */}
-            <Text style={styles.label}>ОПИСАНИЕ И АРХИТЕКТУРНЫЙ КОНТЕКСТ</Text>
+            <Text style={styles.label}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Опишите детали реализации, требования, граничные случаи..."
+              placeholder="Detail technical requirements, trade-offs, edge cases, SLOs..."
               placeholderTextColor={THEME.text4}
               value={content}
               onChangeText={setContent}
@@ -146,7 +145,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
             />
 
             {/* Tags Input */}
-            <Text style={styles.label}>ТЕГИ (ЧЕРЕЗ ЗАПЯТУЮ)</Text>
+            <Text style={styles.label}>TAGS (COMMA SEPARATED)</Text>
             <TextInput
               style={styles.input}
               placeholder="core, grpc, consensus, cache"
@@ -164,7 +163,7 @@ export const CreateNodeModal: React.FC<Props> = ({ visible, onClose }) => {
               {loading ? (
                 <ActivityIndicator size="small" color="#09090B" />
               ) : (
-                <Text style={styles.submitBtnText}>⚡ Добавить на холст</Text>
+                <Text style={styles.submitBtnText}>⚡ Add to Architecture</Text>
               )}
             </TouchableOpacity>
           </ScrollView>

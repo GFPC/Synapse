@@ -90,7 +90,7 @@ export const RelationsTreeScreen: React.FC = () => {
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Поиск по дереву связей..."
+            placeholder="Search relation tree..."
             placeholderTextColor={THEME.text4}
             value={search}
             onChangeText={setSearch}
@@ -100,10 +100,10 @@ export const RelationsTreeScreen: React.FC = () => {
 
         <View style={styles.btnRow}>
           <TouchableOpacity style={styles.ctrlBtn} onPress={expandAll}>
-            <Text style={styles.ctrlBtnText}>Развернуть все</Text>
+            <Text style={styles.ctrlBtnText}>Expand All</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.ctrlBtn} onPress={collapseAll}>
-            <Text style={styles.ctrlBtnText}>Свернуть</Text>
+            <Text style={styles.ctrlBtnText}>Collapse</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -112,8 +112,8 @@ export const RelationsTreeScreen: React.FC = () => {
       {categoriesWithNodes.length === 0 ? (
         <EmptyState
           icon="🌳"
-          title="Связи не найдены"
-          description="В текущем проекте пока нет связей или запрос не вернул результатов"
+          title="No Relations Found"
+          description="There are no active nodes or matching relations in this project"
         />
       ) : (
         <ScrollView
@@ -131,7 +131,7 @@ export const RelationsTreeScreen: React.FC = () => {
                 {activeProject ? activeProject.name : 'Synapse Architecture'}
               </Text>
               <Text style={styles.rootSubtitle}>
-                {nodes.length} узлов знания • {relations.length} связей
+                {nodes.length} knowledge nodes • {relations.length} relations
               </Text>
             </View>
           </View>
@@ -261,7 +261,7 @@ export const RelationsTreeScreen: React.FC = () => {
                                       style={styles.relTargetText}
                                       numberOfLines={1}
                                     >
-                                      {target ? `[${target.display_id}] ${target.title}` : 'Удаленный узел'}
+                                      {target ? `[${target.display_id}] ${target.title}` : 'Remote Node'}
                                     </Text>
                                   </TouchableOpacity>
                                 );

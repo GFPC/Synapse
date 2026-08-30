@@ -16,19 +16,19 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { THEME, NODE_TYPE_CONFIG } from '../theme/tokens';
 
 const CATEGORY_ORDER: { type: NodeType; title: string; icon: string; color: string }[] = [
-  { type: 'component', title: 'Компоненты и Сервисы', icon: '⬡', color: '#F59E0B' },
-  { type: 'feature', title: 'Функции и Возможности', icon: '✦', color: '#3B82F6' },
-  { type: 'decision', title: 'Архитектурные Решения (ADR)', icon: '◆', color: '#8B5CF6' },
-  { type: 'benchmark', title: 'Бенчмарки и Производительность', icon: '📊', color: '#6366F1' },
-  { type: 'problem', title: 'Проблемы и Инциденты', icon: '⚠️', color: '#EF4444' },
-  { type: 'solution', title: 'Решения и Паттерны', icon: '✓', color: '#10B981' },
-  { type: 'risk', title: 'Технические Риски', icon: '⚡', color: '#EC4899' },
-  { type: 'test', title: 'Тесты и Верификация', icon: '🧪', color: '#2DD4BF' },
-  { type: 'deployment', title: 'Инфраструктура и Деплой', icon: '▲', color: '#22C55E' },
-  { type: 'lesson', title: 'Архитектурные Уроки', icon: '💡', color: '#C2B280' },
-  { type: 'note', title: 'Заметки и Документация', icon: '📝', color: '#A1A1AA' },
-  { type: 'link', title: 'Внешние Ссылки', icon: '🔗', color: '#7C8AA5' },
-  { type: 'log', title: 'Журнал изменений', icon: '⏱', color: '#6B7280' },
+  { type: 'component', title: 'Components & Services', icon: '⬡', color: '#F59E0B' },
+  { type: 'feature', title: 'Features & Capabilities', icon: '✦', color: '#3B82F6' },
+  { type: 'decision', title: 'Architecture Decisions (ADR)', icon: '◆', color: '#8B5CF6' },
+  { type: 'benchmark', title: 'Benchmarks & SLO Performance', icon: '📊', color: '#6366F1' },
+  { type: 'problem', title: 'Problems & Incidents', icon: '⚠️', color: '#EF4444' },
+  { type: 'solution', title: 'Solutions & Patterns', icon: '✓', color: '#10B981' },
+  { type: 'risk', title: 'Technical Risks & Hazards', icon: '⚡', color: '#EC4899' },
+  { type: 'test', title: 'Tests & Verification', icon: '🧪', color: '#2DD4BF' },
+  { type: 'deployment', title: 'Infrastructure & Deployment', icon: '▲', color: '#22C55E' },
+  { type: 'lesson', title: 'Architectural Lessons', icon: '💡', color: '#C2B280' },
+  { type: 'note', title: 'Notes & Documentation', icon: '📝', color: '#A1A1AA' },
+  { type: 'link', title: 'External Resources & Links', icon: '🔗', color: '#7C8AA5' },
+  { type: 'log', title: 'Change Log & Audit', icon: '⏱', color: '#6B7280' },
 ];
 
 export const ArchitectureSectionsScreen: React.FC = () => {
@@ -71,7 +71,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
     });
 
     const items: FilterItem[] = [
-      { id: 'all', label: 'Все узлы', count: nodes.length },
+      { id: 'all', label: 'All Nodes', count: nodes.length },
     ];
 
     CATEGORY_ORDER.forEach((cat) => {
@@ -139,7 +139,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Фильтр по названию, тегам, ID..."
+            placeholder="Filter by title, tags, display ID..."
             placeholderTextColor={THEME.text4}
             value={localSearch}
             onChangeText={setLocalSearch}
@@ -155,10 +155,10 @@ export const ArchitectureSectionsScreen: React.FC = () => {
         <View style={styles.actionRow}>
           <View style={styles.toggleButtons}>
             <TouchableOpacity style={styles.toggleBtn} onPress={expandAll}>
-              <Text style={styles.toggleBtnText}>Развернуть всё</Text>
+              <Text style={styles.toggleBtnText}>Expand All</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.toggleBtn} onPress={collapseAll}>
-              <Text style={styles.toggleBtnText}>Свернуть</Text>
+              <Text style={styles.toggleBtnText}>Collapse</Text>
             </TouchableOpacity>
           </View>
 
@@ -175,7 +175,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
             }}
           >
             <Text style={styles.sortBtnText}>
-              Сорт: {sortField === 'updated_at' ? 'Дата ▾' : sortField === 'display_id' ? 'ID ▾' : 'Имя ▾'}
+              Sort: {sortField === 'updated_at' ? 'Date ▾' : sortField === 'display_id' ? 'ID ▾' : 'Name ▾'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -185,14 +185,14 @@ export const ArchitectureSectionsScreen: React.FC = () => {
       {isLoading && nodes.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={THEME.accent} />
-          <Text style={styles.loadingText}>Загрузка архитектурных секций...</Text>
+          <Text style={styles.loadingText}>Loading architecture layers...</Text>
         </View>
       ) : processedNodes.length === 0 ? (
         <EmptyState
           icon="🔍"
-          title="Узлы не найдены"
-          description="Попробуйте изменить запрос фильтра или создайте новый узел"
-          actionText="＋ Создать узел"
+          title="No Nodes Found"
+          description="Try adjusting your filter or create a new architecture node"
+          actionText="＋ Create Node"
           onAction={openCreateNodeModal}
         />
       ) : (
@@ -263,7 +263,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
         onPress={openCreateNodeModal}
       >
         <Text style={styles.fabIcon}>＋</Text>
-        <Text style={styles.fabText}>Создать узел</Text>
+        <Text style={styles.fabText}>New Node</Text>
       </TouchableOpacity>
     </View>
   );

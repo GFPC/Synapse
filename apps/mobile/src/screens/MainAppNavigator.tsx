@@ -15,11 +15,13 @@ import { ArchitectureSectionsScreen } from './ArchitectureSectionsScreen';
 import { RelationsTreeScreen } from './RelationsTreeScreen';
 import { MetricsAdrScreen } from './MetricsAdrScreen';
 import { GlobalSearchScreen } from './GlobalSearchScreen';
-import { ProjectsScreen } from './ProjectsScreen';
+import { SettingsScreen } from './SettingsScreen';
+import { AccountScreen } from './AccountScreen';
 import { NodeDetailModal } from '../components/drawer/NodeDetailModal';
 import { CreateNodeModal } from '../components/modals/CreateNodeModal';
 import { CreateRelationModal } from '../components/modals/CreateRelationModal';
 import { THEME } from '../theme/tokens';
+import { Project } from '../types';
 
 export const MainAppNavigator: React.FC = () => {
   const {
@@ -32,6 +34,7 @@ export const MainAppNavigator: React.FC = () => {
     selectProject,
     selectedNodeId,
     selectNode,
+    currentUser,
     isConnected,
     serverStatus,
     isCreateNodeModalOpen,
@@ -58,8 +61,10 @@ export const MainAppNavigator: React.FC = () => {
         activeProject={activeProject}
         isConnected={isConnected}
         serverStatus={serverStatus}
+        currentUser={currentUser}
         onOpenProjectPicker={() => setIsProjectPickerOpen(true)}
         onOpenCreateNode={openCreateNodeModal}
+        onOpenAccount={() => switchTab(currentTab === 'account' ? 'sections' : 'account')}
       />
 
       {/* Active Screen Tab View */}
@@ -68,7 +73,8 @@ export const MainAppNavigator: React.FC = () => {
         {currentTab === 'tree' && <RelationsTreeScreen />}
         {currentTab === 'metrics' && <MetricsAdrScreen />}
         {currentTab === 'search' && <GlobalSearchScreen />}
-        {currentTab === 'projects' && <ProjectsScreen />}
+        {currentTab === 'settings' && <SettingsScreen />}
+        {currentTab === 'account' && <AccountScreen />}
       </View>
 
       {/* Bottom Tab Bar Navigation */}
@@ -110,8 +116,8 @@ export const MainAppNavigator: React.FC = () => {
           onPress={() => setIsProjectPickerOpen(false)}
         >
           <View style={styles.pickerModal}>
-            <Text style={styles.pickerTitle}>ВЫБОР АРХИТЕКТУРНОЙ СХЕМЫ</Text>
-            {projects.map((proj) => {
+            <Text style={styles.pickerTitle}>SELECT ARCHITECTURE SCHEMA</Text>
+            {projects.map((proj: Project) => {
               const isCurrent = activeProject?.id === proj.id;
               return (
                 <TouchableOpacity

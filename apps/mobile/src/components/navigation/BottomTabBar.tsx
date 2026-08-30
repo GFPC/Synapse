@@ -22,11 +22,11 @@ export const BottomTabBar: React.FC<Props> = ({
   nodesCount,
 }) => {
   const tabs: TabItem[] = [
-    { id: 'sections', label: 'Секции', icon: '📑', badge: nodesCount },
-    { id: 'tree', label: 'Связи', icon: '🌳' },
-    { id: 'metrics', label: 'ADR & Метрики', icon: '📊' },
-    { id: 'search', label: 'Поиск', icon: '🔍' },
-    { id: 'projects', label: 'Проекты', icon: '📁' },
+    { id: 'sections', label: 'Sections', icon: '📑', badge: nodesCount },
+    { id: 'tree', label: 'Relations', icon: '🌳' },
+    { id: 'metrics', label: 'ADR & Metrics', icon: '📊' },
+    { id: 'search', label: 'Search', icon: '🔍' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   tabButton: {
     flex: 1,

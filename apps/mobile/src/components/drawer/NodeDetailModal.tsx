@@ -9,7 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { SynapseNode, NodeType, RelationType, Comment } from '../../types';
+import { SynapseNode, NodeType, Comment } from '../../types';
 import { THEME, NODE_TYPE_CONFIG, RELATION_CONFIG, RelationConfig } from '../../theme/tokens';
 import { useSynapseMobileStore } from '../../store/synapseMobileStore';
 import { BenchmarkMeter } from '../nodes/BenchmarkMeter';
@@ -30,7 +30,6 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
     fetchComments,
     addComment,
     toggleReaction,
-    deleteNode,
     openCreateRelationModal,
     selectNode,
   } = useSynapseMobileStore();
@@ -93,7 +92,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                 </Text>
                 <Text style={styles.typeLabel}>{conf.label}</Text>
               </View>
-              <Text style={styles.statusLabel}>статус: {node.status || 'in_progress'}</Text>
+              <Text style={styles.statusLabel}>status: {node.status || 'in_progress'}</Text>
             </View>
           </View>
 
@@ -109,7 +108,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
             onPress={() => setActiveTab('overview')}
           >
             <Text style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
-              Обзор
+              Overview
             </Text>
           </TouchableOpacity>
 
@@ -118,7 +117,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
             onPress={() => setActiveTab('relations')}
           >
             <Text style={[styles.tabText, activeTab === 'relations' && styles.tabTextActive]}>
-              Связи ({nodeRelations.length})
+              Relations ({nodeRelations.length})
             </Text>
           </TouchableOpacity>
 
@@ -127,7 +126,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
             onPress={() => setActiveTab('comments')}
           >
             <Text style={[styles.tabText, activeTab === 'comments' && styles.tabTextActive]}>
-              Обсуждение ({comments.length})
+              Discussion ({comments.length})
             </Text>
           </TouchableOpacity>
 
@@ -155,15 +154,15 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
               {isBenchmark && <BenchmarkMeter meta={node.meta} />}
 
               <View style={styles.cardBox}>
-                <Text style={styles.boxTitle}>ОПИСАНИЕ И АРХИТЕКТУРНЫЙ КОНТЕКСТ</Text>
+                <Text style={styles.boxTitle}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
                 <Text style={styles.contentText}>
-                  {node.content || 'Описание для этого узла отсутствует.'}
+                  {node.content || 'No architectural description provided for this node.'}
                 </Text>
               </View>
 
               {/* Tags Section */}
               <View style={styles.cardBox}>
-                <Text style={styles.boxTitle}>ТЕГИ СИСТЕМЫ</Text>
+                <Text style={styles.boxTitle}>SYSTEM TAGS</Text>
                 <View style={styles.tagsWrap}>
                   {node.tags && node.tags.length > 0 ? (
                     node.tags.map((t, i) => (
@@ -172,7 +171,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                       </View>
                     ))
                   ) : (
-                    <Text style={styles.noDataText}>Теги не указаны</Text>
+                    <Text style={styles.noDataText}>No tags assigned</Text>
                   )}
                 </View>
               </View>
@@ -180,10 +179,10 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
               {/* Author & Timestamps */}
               <View style={styles.metaRow}>
                 <Text style={styles.metaItem}>
-                  Автор: {node.author?.name || 'Lead Architect'}
+                  Author: {node.author?.name || 'Lead Architect'}
                 </Text>
                 <Text style={styles.metaItem}>
-                  Обновлено: {new Date(node.updated_at).toLocaleDateString()}
+                  Updated: {new Date(node.updated_at).toLocaleDateString()}
                 </Text>
               </View>
             </View>
@@ -193,19 +192,19 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
           {activeTab === 'relations' && (
             <View style={styles.tabSection}>
               <View style={styles.relHeaderRow}>
-                <Text style={styles.boxTitle}>СВЯЗАННЫЕ УЗЛЫ ГРАФА</Text>
+                <Text style={styles.boxTitle}>CONNECTED GRAPH NODES</Text>
                 <TouchableOpacity
                   style={styles.addRelBtn}
                   onPress={() => openCreateRelationModal(node)}
                 >
-                  <Text style={styles.addRelBtnText}>＋ Добавить связь</Text>
+                  <Text style={styles.addRelBtnText}>＋ Add Relation</Text>
                 </TouchableOpacity>
               </View>
 
               {nodeRelations.length === 0 ? (
                 <View style={styles.emptyRelBox}>
                   <Text style={styles.emptyRelText}>
-                    У этого узла пока нет связей с другими компонентами.
+                    This node has no active graph relationships yet.
                   </Text>
                 </View>
               ) : (
@@ -226,7 +225,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                       >
                         <View style={styles.relBadgeBox}>
                           <Text style={[styles.relDirectionText, { color: relConf.color }]}>
-                            {isOut ? 'ИСХОДЯЩАЯ' : 'ВХОДЯЩАЯ'}
+                            {isOut ? 'OUTGOING' : 'INCOMING'}
                           </Text>
                           <View
                             style={[
@@ -241,11 +240,11 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                         </View>
 
                         <Text style={styles.relTargetTitle}>
-                          {target ? `[${target.display_id}] ${target.title}` : 'Удаленный узел'}
+                          {target ? `[${target.display_id}] ${target.title}` : 'Remote Node'}
                         </Text>
 
                         {rel.note ? (
-                          <Text style={styles.relNoteText}>Заметка: {rel.note}</Text>
+                          <Text style={styles.relNoteText}>Note: {rel.note}</Text>
                         ) : null}
                       </TouchableOpacity>
                     );
@@ -258,13 +257,13 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
           {/* TAB 3: COMMENTS & REACTIONS */}
           {activeTab === 'comments' && (
             <View style={styles.tabSection}>
-              <Text style={styles.boxTitle}>ОБСУЖДЕНИЕ АРХИТЕКТУРЫ</Text>
+              <Text style={styles.boxTitle}>ARCHITECTURE PEER REVIEW</Text>
 
               {/* Add Comment Input */}
               <View style={styles.addCommentBox}>
                 <TextInput
                   style={styles.commentInput}
-                  placeholder="Оставить комментарий к решению..."
+                  placeholder="Add your architectural feedback..."
                   placeholderTextColor={THEME.text4}
                   value={commentText}
                   onChangeText={setCommentText}
@@ -281,7 +280,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                   {isSubmittingComment ? (
                     <ActivityIndicator size="small" color="#000" />
                   ) : (
-                    <Text style={styles.sendCommentText}>Отправить</Text>
+                    <Text style={styles.sendCommentText}>Post Review</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -290,7 +289,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
               {comments.length === 0 ? (
                 <View style={styles.emptyRelBox}>
                   <Text style={styles.emptyRelText}>
-                    Комментариев пока нет. Будьте первым!
+                    No discussion reviews yet. Be the first to comment!
                   </Text>
                 </View>
               ) : (
@@ -345,7 +344,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
           {/* TAB 4: META JSON */}
           {activeTab === 'meta' && (
             <View style={styles.tabSection}>
-              <Text style={styles.boxTitle}>МЕТАДАННЫЕ УЗЛА (RAW JSON)</Text>
+              <Text style={styles.boxTitle}>RAW NODE METADATA (JSON)</Text>
               <View style={styles.jsonBox}>
                 <Text style={styles.jsonText}>
                   {JSON.stringify(node.meta || {}, null, 2)}

@@ -27,7 +27,7 @@ export type RelationType =
 export type UserRole = 'owner' | 'editor' | 'viewer';
 export type NodeVisibility = 'internal' | 'shared';
 
-export type MainTabType = 'sections' | 'tree' | 'metrics' | 'search' | 'projects';
+export type MainTabType = 'sections' | 'tree' | 'metrics' | 'search' | 'settings' | 'account' | 'projects';
 
 export type SortField = 'display_id' | 'updated_at' | 'title' | 'status';
 export type SortOrder = 'asc' | 'desc';
@@ -39,6 +39,25 @@ export interface User {
   avatar_url?: string;
   role?: UserRole;
   created_at: number;
+}
+
+export interface UserStats {
+  authored_nodes_count: number;
+  managed_projects_count: number;
+  decisions_count: number;
+  comments_count: number;
+}
+
+export interface AppSettings {
+  apiBaseUrl: string;
+  wsBaseUrl: string;
+  autoLayoutAlgorithm: 'hierarchical' | 'force';
+  cardDensity: 'compact' | 'standard' | 'detailed';
+  themeMode: 'obsidian' | 'oled' | 'cyberpunk';
+  enableLiveWs: boolean;
+  enableNotifications: boolean;
+  monospaceCode: boolean;
+  offlineCacheEnabled: boolean;
 }
 
 export interface Project {
