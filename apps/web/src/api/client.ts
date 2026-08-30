@@ -108,7 +108,7 @@ class ApiClient {
                 this.clearTokens();
                 this.isRefreshing = false;
               }
-            } catch (err) {
+            } catch (_err) {
               this.clearTokens();
               this.isRefreshing = false;
             }

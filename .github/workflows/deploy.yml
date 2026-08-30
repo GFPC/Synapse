@@ -1,0 +1,59 @@
+name: Synapse CD (Deploy to Production Server)
+
+on:
+  workflow_run:
+    workflows: ["Synapse CI (Test & Lint & Build)"]
+    branches: [main]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST || '87.58.204.138' }}
+          username: ${{ secrets.SSH_USER || 'root' }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            echo "=== 1. Updating Synapse repository in /opt/synapse ==="
+            cd /opt/synapse
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "=== 2. Rebuilding and restarting containers ==="
+            docker compose build
+            docker compose up -d --remove-orphans
+
+            echo "=== 3. Waiting for services to become healthy (15s) ==="
+            sleep 15
+
+            echo "=== 4. Verifying Health Endpoint ==="
+            HEALTH_OUTPUT=$(curl -s http://localhost/health)
+            echo "Health Response: $HEALTH_OUTPUT"
+            echo "$HEALTH_OUTPUT" | grep -q '"status":"ok"' || {
+                echo "[ERROR] Health check failed!"
+                docker compose logs --tail=50
+                exit 1
+            }
+
+            echo "=== 5. Checking VPN Service (Must stay active) ==="
+            systemctl is-active --quiet xray && echo "Xray VPN is healthy & active" || echo "[WARN] Check xray status"
+
+            echo "=== 6. Container Status ==="
+            docker compose ps
+
+            echo "=== Deployment Successful! ==="

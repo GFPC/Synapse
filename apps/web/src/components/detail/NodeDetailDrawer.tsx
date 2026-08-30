@@ -63,6 +63,7 @@ export const NodeDetailDrawer: React.FC = () => {
   const [newAttFilename, setNewAttFilename] = useState('');
   const [newAttUrl, setNewAttUrl] = useState('');
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const node = useMemo(() => nodes.find((n) => n.id === selectedNodeId), [nodes, selectedNodeId]);
 
   if (!node) return null;
@@ -107,8 +108,6 @@ export const NodeDetailDrawer: React.FC = () => {
     setCommentInput('');
     setReplyingToId(null);
   };
-
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
