@@ -139,8 +139,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 4000,
-    height: 4000,
   },
   nodeWrapper: {
     position: 'absolute',

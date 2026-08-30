@@ -11,6 +11,7 @@ import {
   Modal,
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
+import { SectionsView } from '../components/sections/SectionsView';
 import { InfiniteCanvas } from '../components/canvas/InfiniteCanvas';
 import { NodeDetailModal } from '../components/drawer/NodeDetailModal';
 import { SearchModal } from '../components/modals/SearchModal';
@@ -49,6 +50,7 @@ export const CanvasScreen: React.FC = () => {
     setTypeFilter,
   } = useSynapseMobileStore();
 
+  const [viewMode, setViewMode] = useState<'sections' | 'canvas'>('sections');
   const [zoomScale, setZoomScale] = useState(1.0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -103,32 +105,6 @@ export const CanvasScreen: React.FC = () => {
             <Text style={styles.createBtnText}>＋ Узел</Text>
           </TouchableOpacity>
 
-          {/* Status Indicator */}
-          <View
-            style={[
-              styles.statusPill,
-              {
-                backgroundColor: isConnected ? 'rgba(34, 197, 94, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                borderColor: isConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(245, 158, 11, 0.3)',
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: isConnected ? THEME.status.ok : THEME.status.warn },
-              ]}
-            />
-            <Text
-              style={[
-                styles.statusText,
-                { color: isConnected ? '#86EFAC' : '#FCD34D' },
-              ]}
-            >
-              {isConnected ? 'Live' : 'Sync'}
-            </Text>
-          </View>
-
           {/* Search Button */}
           <TouchableOpacity
             style={styles.searchIconBtn}
@@ -137,6 +113,74 @@ export const CanvasScreen: React.FC = () => {
           >
             <Text style={styles.searchIconText}>🔍</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* View Mode Switcher + Status Bar */}
+      <View style={styles.subHeader}>
+        {/* Segmented View Switcher */}
+        <View style={styles.segmentedControl}>
+          <TouchableOpacity
+            style={[
+              styles.segmentBtn,
+              viewMode === 'sections' && styles.segmentBtnActive,
+            ]}
+            onPress={() => setViewMode('sections')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                viewMode === 'sections' && styles.segmentTextActive,
+              ]}
+            >
+              📑 Секции ({nodes.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.segmentBtn,
+              viewMode === 'canvas' && styles.segmentBtnActive,
+            ]}
+            onPress={() => setViewMode('canvas')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                viewMode === 'canvas' && styles.segmentTextActive,
+              ]}
+            >
+              🕸️ Холст
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Live Status Pill */}
+        <View
+          style={[
+            styles.statusPill,
+            {
+              backgroundColor: isConnected ? 'rgba(34, 197, 94, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+              borderColor: isConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(245, 158, 11, 0.3)',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: isConnected ? THEME.status.ok : THEME.status.warn },
+            ]}
+          />
+          <Text
+            style={[
+              styles.statusText,
+              { color: isConnected ? '#86EFAC' : '#FCD34D' },
+            ]}
+          >
+            {isConnected ? 'Live Sync' : 'Connecting'}
+          </Text>
         </View>
       </View>
 
@@ -169,35 +213,45 @@ export const CanvasScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Main Canvas Area */}
-      <View style={styles.canvasContainer}>
+      {/* Main View Area */}
+      <View style={styles.mainContainer}>
         {isLoading && nodes.length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={THEME.accent} />
             <Text style={styles.loadingText}>Загрузка архитектурного графа...</Text>
           </View>
-        ) : (
-          <InfiniteCanvas
+        ) : viewMode === 'sections' ? (
+          /* PRIMARY SECTIONS VIEW */
+          <SectionsView
             nodes={filteredNodes}
             relations={relations}
-            selectedNodeId={selectedNodeId}
-            scale={zoomScale}
-            onSelectNode={selectNode}
-            onNodeMove={updateNodePosition}
+            onSelectNode={(nodeId) => selectNode(nodeId)}
           />
+        ) : (
+          /* SECONDARY 2D CANVAS VIEW */
+          <>
+            <InfiniteCanvas
+              nodes={filteredNodes}
+              relations={relations}
+              selectedNodeId={selectedNodeId}
+              scale={zoomScale}
+              onSelectNode={selectNode}
+              onNodeMove={updateNodePosition}
+            />
+
+            {/* Floating Canvas HUD (Canvas view only) */}
+            <CanvasHUD
+              scale={zoomScale}
+              onZoomIn={() => setZoomScale((s) => Math.min(2.5, s + 0.15))}
+              onZoomOut={() => setZoomScale((s) => Math.max(0.4, s - 0.15))}
+              onFit={() => setZoomScale(1.0)}
+              onHierarchyLayout={() => applyAutoLayout('hierarchical')}
+              onForceLayout={() => applyAutoLayout('force')}
+              onOpenSearch={() => setIsSearchOpen(true)}
+            />
+          </>
         )}
       </View>
-
-      {/* Floating Canvas HUD */}
-      <CanvasHUD
-        scale={zoomScale}
-        onZoomIn={() => setZoomScale((s) => Math.min(2.5, s + 0.15))}
-        onZoomOut={() => setZoomScale((s) => Math.max(0.4, s - 0.15))}
-        onFit={() => setZoomScale(1.0)}
-        onHierarchyLayout={() => applyAutoLayout('hierarchical')}
-        onForceLayout={() => applyAutoLayout('force')}
-        onOpenSearch={() => setIsSearchOpen(true)}
-      />
 
       {/* Search Modal */}
       <SearchModal
@@ -328,7 +382,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: THEME.text2,
     fontWeight: '600',
-    maxWidth: 130,
+    maxWidth: 140,
   },
   pickerChevron: {
     fontSize: 10,
@@ -352,11 +406,56 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: THEME.accentBright,
   },
+  searchIconBtn: {
+    backgroundColor: THEME.surface2,
+    padding: 6,
+    borderRadius: THEME.radius.pill,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  searchIconText: {
+    fontSize: 11,
+  },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: THEME.surface1,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.border,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: THEME.surface2,
+    borderRadius: THEME.radius.pill,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  segmentBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: THEME.radius.pill,
+  },
+  segmentBtnActive: {
+    backgroundColor: THEME.surface4,
+  },
+  segmentText: {
+    fontSize: 11,
+    color: THEME.text3,
+    fontWeight: '500',
+  },
+  segmentTextActive: {
+    color: THEME.text1,
+    fontWeight: '700',
+  },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: THEME.radius.pill,
     borderWidth: 1,
@@ -371,16 +470,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
   },
-  searchIconBtn: {
-    backgroundColor: THEME.surface2,
-    padding: 6,
-    borderRadius: THEME.radius.pill,
-    borderWidth: 1,
-    borderColor: THEME.border,
-  },
-  searchIconText: {
-    fontSize: 11,
-  },
   filterBar: {
     backgroundColor: THEME.surface1,
     borderBottomWidth: 1,
@@ -388,14 +477,14 @@ const styles = StyleSheet.create({
   },
   filterScroll: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     gap: 6,
   },
   filterChip: {
     backgroundColor: THEME.surface2,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 7,
     borderWidth: 1,
     borderColor: THEME.border,
   },
@@ -404,7 +493,7 @@ const styles = StyleSheet.create({
     borderColor: THEME.accentLine,
   },
   filterChipText: {
-    fontSize: 11,
+    fontSize: 10,
     color: THEME.text3,
     fontWeight: '500',
   },
@@ -412,7 +501,7 @@ const styles = StyleSheet.create({
     color: THEME.accentBright,
     fontWeight: '700',
   },
-  canvasContainer: {
+  mainContainer: {
     flex: 1,
   },
   loadingContainer: {
