@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapse — Design System & Component Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   SYNAPSE — Design System & Component Spec
+   Committed dark "Obsidian Zinc" world. All colors explicit.
+   ============================================================ */
+:root{
+  /* ground + surfaces */
+  --bg:#09090B;
+  --surface-1:#161619;
+  --surface-2:#1F1F23;
+  --surface-3:#27272A;
+  --surface-4:#323238;
+  --border:rgba(255,255,255,.08);
+  --border-2:rgba(255,255,255,.12);
+  --border-strong:#3F3F46;
+  /* text */
+  --text-1:#FAFAFA;
+  --text-2:#B4B4BD;
+  --text-3:#8A8A94;
+  --text-4:#5E5E68;
+  /* brand chrome accent (distinct from all 13 data hues) */
+  --accent:#818CF8;
+  --accent-bright:#A5B4FC;
+  --accent-dim:rgba(129,140,248,.16);
+  --accent-line:rgba(129,140,248,.34);
+  /* status */
+  --ok:#22C55E; --warn:#F59E0B; --crit:#EF4444; --info:#818CF8; --muted:#71717A;
+  /* node type palette — 8 load-bearing (vivid) */
+  --t-problem:#EF4444;
+  --t-solution:#10B981;
+  --t-decision:#8B5CF6;
+  --t-feature:#3B82F6;
+  --t-component:#F59E0B;
+  --t-risk:#EC4899;
+  --t-benchmark:#6366F1;
+  --t-deployment:#22C55E;
+  /* 5 auxiliary (muted / cool — recede on canvas) */
+  --t-test:#2DD4BF;
+  --t-note:#A1A1AA;
+  --t-lesson:#C2B280;
+  --t-link:#7C8AA5;
+  --t-log:#6B7280;
+  /* glass */
+  --glass-bg:rgba(20,20,23,.78);
+  --glass-brd:rgba(255,255,255,.10);
+  /* radii */
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-pill:999px;
+  /* motion */
+  --e-out:cubic-bezier(.22,1,.36,1);
+  --e-io:cubic-bezier(.65,.05,.36,1);
+  --d-1:.16s; --d-2:.26s; --d-3:.42s;
+  /* type */
+  --f-display:'Sora',system-ui,-apple-system,sans-serif;
+  --f-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4);
+  --shadow-2:0 8px 24px -6px rgba(0,0,0,.55);
+  --shadow-3:0 24px 60px -18px rgba(0,0,0,.72);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text-1);
+  font-family:var(--f-sans);
+  font-size:16px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{margin:0;font-family:var(--f-display);font-weight:600;line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--accent-dim);color:var(--accent-bright)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+img,svg{display:block;max-width:100%}
+
+/* scrollbar */
+*::-webkit-scrollbar{width:11px;height:11px}
+*::-webkit-scrollbar-thumb{background:var(--surface-4);border-radius:99px;border:3px solid var(--bg)}
+*::-webkit-scrollbar-thumb:hover{background:var(--border-strong)}
+
+/* layout primitives */
+.wrap{max-width:1200px;margin-inline:auto;padding-inline:clamp(1.15rem,5vw,3rem)}
+.section{padding-block:clamp(3.6rem,8vh,6.4rem);position:relative}
+.section + .section{border-top:1px solid var(--border)}
+.sec-head{max-width:64ch;margin-bottom:clamp(2rem,4vw,3rem)}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-family:var(--f-mono);font-size:.72rem;font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--accent-bright);
+  margin-bottom:1.1rem;
+}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--accent-line)}
+.sec-title{font-size:clamp(1.6rem,3.4vw,2.35rem)}
+.sec-desc{margin-top:.9rem;color:var(--text-2);font-size:1.02rem;max-width:58ch}
+.sec-desc code{font-family:var(--f-mono);font-size:.86em;color:var(--accent-bright);background:var(--accent-dim);padding:.08em .38em;border-radius:5px}
+
+/* reveal animation */
+.reveal-on .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s var(--e-out),transform .6s var(--e-out)}
+.reveal-on .reveal.in{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .reveal-on .reveal{opacity:1!important;transform:none!important}
+}
+
+/* icon system */
+.ico{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico .fill{fill:currentColor;stroke:none}
+
+/* ---------- top nav ---------- */
+.nav{
+  position:sticky;top:0;z-index:60;
+  background:linear-gradient(to bottom,rgba(9,9,11,.86),rgba(9,9,11,.62));
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  border-bottom:1px solid var(--border);
+}
+.nav-in{max-width:1200px;margin-inline:auto;padding:.72rem clamp(1.15rem,5vw,3rem);display:flex;align-items:center;gap:1.4rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:var(--f-display);font-weight:600;letter-spacing:-.01em;font-size:1.06rem}
+.brand-dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px 2px var(--accent);animation:pulse 3.4s var(--e-io) infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.8)}}
+.nav-links{display:flex;gap:.35rem;margin-left:auto;flex-wrap:wrap}
+.nav-links a{
+  font-size:.82rem;color:var(--text-3);padding:.4rem .7rem;border-radius:var(--r-pill);
+  transition:color var(--d-1) ease,background var(--d-1) ease;font-weight:500;
+}
+.nav-links a:hover{color:var(--text-1);background:var(--surface-2)}
+.nav-links a.active{color:var(--accent-bright);background:var(--accent-dim)}
+.nav-tag{font-family:var(--f-mono);font-size:.72rem;color:var(--text-4);border:1px solid var(--border);padding:.3rem .55rem;border-radius:var(--r-pill)}
+@media(max-width:760px){.nav-links{display:none}.nav-tag{margin-left:auto}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;padding-block:clamp(3.4rem,7vw,6rem) clamp(3rem,6vw,5rem)}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background-image:radial-gradient(circle at center,rgba(255,255,255,.05) 1.1px,transparent 1.1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(120% 90% at 60% 20%,#000 30%,transparent 78%);
+  mask-image:radial-gradient(120% 90% at 60% 20%,#000 30%,transparent 78%);
+  opacity:.7;pointer-events:none;
+}
+.hero::after{
+  content:"";position:absolute;top:-24%;right:-6%;width:60%;height:80%;
+  background:radial-gradient(closest-side,rgba(129,140,248,.16),transparent 70%);
+  filter:blur(20px);pointer-events:none;
+}
+.hero-in{position:relative;z-index:1;display:grid;grid-template-columns:1.02fr 1.2fr;gap:clamp(2rem,4vw,3.4rem);align-items:center}
+@media(max-width:940px){.hero-in{grid-template-columns:1fr;gap:2.4rem}}
+.hero h1{font-size:clamp(3rem,8vw,5.4rem);font-weight:700;letter-spacing:-.045em;line-height:.98}
+.hero h1 .accent{background:linear-gradient(120deg,var(--accent-bright),#C4B5FD 60%,#93C5FD);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-lede{margin-top:1.4rem;font-size:clamp(1.02rem,1.5vw,1.18rem);color:var(--text-2);max-width:44ch;line-height:1.6}
+.hero-chips{margin-top:1.8rem;display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{
+  font-family:var(--f-mono);font-size:.74rem;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--border);
+  padding:.4rem .72rem;border-radius:var(--r-pill);
+}
+.chip b{color:var(--text-1);font-weight:600}
+.stage{
+  position:relative;border:1px solid var(--border);border-radius:var(--r-xl);
+  background:linear-gradient(180deg,rgba(31,31,35,.5),rgba(9,9,11,.2));
+  box-shadow:var(--shadow-3);overflow:hidden;
+}
+.stage-bar{display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-bottom:1px solid var(--border)}
+.stage-dot{width:9px;height:9px;border-radius:50%;background:var(--surface-4)}
+.stage-title{margin-left:.4rem;font-family:var(--f-mono);font-size:.72rem;color:var(--text-3)}
+.stage-live{margin-left:auto;display:flex;align-items:center;gap:.4rem;font-family:var(--f-mono);font-size:.68rem;color:var(--ok)}
+.stage-live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 2s infinite}
+.stage svg.constellation{width:100%;height:auto;display:block}
+
+/* principles */
+.principles{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:900px){.principles{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.principles{grid-template-columns:1fr}}
+.pcard{
+  padding:1.4rem;border:1px solid var(--border);border-radius:var(--r-lg);
+  background:var(--surface-1);position:relative;overflow:hidden;
+  transition:border-color var(--d-2) ease,transform var(--d-2) var(--e-out),background var(--d-2) ease;
+}
+.pcard:hover{border-color:var(--border-2);transform:translateY(-3px);background:var(--surface-2)}
+.pcard .pnum{font-family:var(--f-mono);font-size:.72rem;color:var(--accent-bright);letter-spacing:.1em}
+.pcard h3{margin:.7rem 0 .5rem;font-size:1.06rem}
+.pcard p{color:var(--text-3);font-size:.9rem;line-height:1.55}
+.pcard .glowbar{position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+  background:var(--surface-3);border:1px solid var(--border-2);color:var(--text-1);
+  font-family:var(--f-mono);font-size:.8rem;padding:.6rem 1rem;border-radius:var(--r-pill);
+  box-shadow:var(--shadow-2);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s var(--e-out);z-index:200;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* shared node-type tokens + chip */
+.t-problem{--c:var(--t-problem)} .t-solution{--c:var(--t-solution)} .t-decision{--c:var(--t-decision)}
+.t-feature{--c:var(--t-feature)} .t-component{--c:var(--t-component)} .t-risk{--c:var(--t-risk)}
+.t-benchmark{--c:var(--t-benchmark)} .t-deployment{--c:var(--t-deployment)} .t-test{--c:var(--t-test)}
+.t-note{--c:var(--t-note)} .t-lesson{--c:var(--t-lesson)} .t-link{--c:var(--t-link)} .t-log{--c:var(--t-log)}
+.tchip{
+  width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none;
+  color:var(--c);
+  background:color-mix(in srgb,var(--c) 15%,transparent);
+  border:1px solid color-mix(in srgb,var(--c) 34%,transparent);
+}
+.tchip .ico{width:20px;height:20px}
+.tchip.sm{width:28px;height:28px;border-radius:8px}
+.tchip.sm .ico{width:16px;height:16px}
+
+/* palette grid */
+.pal-tier{display:flex;align-items:center;gap:.8rem;margin:1.8rem 0 1rem}
+.pal-tier:first-of-type{margin-top:.4rem}
+.pal-tier .lbl{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;color:var(--text-2);text-transform:uppercase;white-space:nowrap}
+.pal-tier .rule{height:1px;background:var(--border);flex:1}
+.pal-tier .cnt{font-family:var(--f-mono);font-size:.72rem;color:var(--text-4)}
+.pal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
+@media(max-width:900px){.pal-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.pal-grid{grid-template-columns:repeat(2,1fr)}}
+.sw{
+  position:relative;overflow:hidden;text-align:left;cursor:pointer;
+  border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-1);
+  padding:1rem;display:flex;flex-direction:column;gap:.85rem;font-family:inherit;
+  transition:border-color var(--d-2) ease,background var(--d-2) ease,transform var(--d-2) var(--e-out);
+}
+.sw:hover{background:var(--surface-2);transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 55%,var(--border))}
+.sw::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--c);opacity:0;transition:opacity var(--d-2)}
+.sw:hover::after{opacity:.75}
+.sw-top{display:flex;align-items:center;gap:.65rem}
+.sw-id{margin-left:auto;font-family:var(--f-mono);font-size:.72rem;color:var(--text-4);border:1px solid var(--border);border-radius:6px;padding:.12rem .4rem}
+.sw-label{font-weight:600;font-size:.94rem;line-height:1.2}
+.sw-type{font-family:var(--f-mono);font-size:.72rem;color:var(--text-3);margin-top:.15rem}
+.sw-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.sw-hex{font-family:var(--f-mono);font-size:.76rem;font-weight:600;color:var(--c)}
+.sw-copy{font-family:var(--f-mono);font-size:.66rem;color:var(--text-4);opacity:0;transition:opacity var(--d-2)}
+.sw:hover .sw-copy{opacity:1}
+
+.ramp{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:.5rem;margin-top:1rem}
+.ramp .r{border-radius:var(--r-sm);border:1px solid var(--border);padding:.75rem .7rem;min-height:76px;display:flex;flex-direction:column;justify-content:flex-end;gap:.15rem}
+.ramp .r .nm{font-family:var(--f-mono);font-size:.68rem;color:var(--text-1);font-weight:500}
+.ramp .r .hx{font-family:var(--f-mono);font-size:.64rem;color:var(--text-3)}
+.pal-cols{display:grid;grid-template-columns:1.4fr 1fr;gap:2rem;margin-top:2.4rem}
+@media(max-width:820px){.pal-cols{grid-template-columns:1fr;gap:1.6rem}}
+.mini-h{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-2);margin-bottom:.5rem}
+.status-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+
+/* status pill */
+.pill{display:inline-flex;align-items:center;gap:.4rem;font-size:.74rem;font-weight:600;font-family:var(--f-mono);padding:.22rem .6rem;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface-2);color:var(--text-2)}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--s,var(--muted));box-shadow:0 0 7px var(--s,transparent)}
+.pill.ok{--s:var(--ok);color:#86EFAC;border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.pill.warn{--s:var(--warn);color:#FCD34D;border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.pill.crit{--s:var(--crit);color:#FCA5A5;border-color:color-mix(in srgb,var(--crit) 30%,transparent)}
+.pill.info{--s:var(--info);color:var(--accent-bright);border-color:var(--accent-line)}
+
+/* ============================================================
+   03 · FLAGSHIP NODECARD & ANATOMY
+   ============================================================ */
+.node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;margin-top:2rem}
+.ncard{
+  position:relative;background:var(--surface-1);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:1.15rem;display:flex;flex-direction:column;gap:.75rem;
+  transition:all var(--d-2) var(--e-out);cursor:pointer;user-select:none;
+}
+.ncard:hover{background:var(--surface-2);border-color:color-mix(in srgb,var(--c) 45%,var(--border));transform:translateY(-3px);box-shadow:var(--shadow-2)}
+.ncard.selected{
+  background:color-mix(in srgb,var(--c) 8%,var(--surface-2));
+  border-color:var(--c);border-width:1.5px;
+  box-shadow:0 0 25px -4px color-mix(in srgb,var(--c) 35%,transparent);
+}
+.ncard.locked{border-style:dashed;border-color:#F59E0B}
+.ncard-head{display:flex;align-items:center;gap:.6rem}
+.ncard-id{font-family:var(--f-mono);font-size:.76rem;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);padding:.15rem .45rem;border-radius:6px}
+.ncard-type{font-family:var(--f-mono);font-size:.72rem;color:var(--text-3);text-transform:uppercase}
+.ncard-pill{margin-left:auto}
+.ncard-title{font-size:.96rem;font-weight:600;color:var(--text-1);line-height:1.35}
+.ncard-desc{font-size:.82rem;color:var(--text-3);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ncard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:.6rem;border-top:1px solid var(--border)}
+.ncard-tags{display:flex;gap:.35rem;flex-wrap:wrap}
+.ncard-tag{font-family:var(--f-mono);font-size:.68rem;color:var(--text-3);background:var(--surface-3);padding:.1rem .35rem;border-radius:4px}
+.ncard-avatar{width:20px;height:20px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--accent-line);display:grid;place-items:center;font-size:9px;color:var(--accent-bright);font-weight:700}
+
+/* smart benchmark bar */
+.bench-bar{margin-top:.4rem;background:var(--surface-3);border-radius:4px;height:6px;overflow:hidden;position:relative}
+.bench-fill{height:100%;background:linear-gradient(90deg,#6366F1,#A5B4FC);border-radius:4px}
+
+/* soft lock pill */
+.lock-pill{position:absolute;top:-10px;right:16px;background:#F59E0B;color:#09090B;font-family:var(--f-mono);font-size:.68rem;font-weight:700;padding:.1rem .5rem;border-radius:var(--r-pill);box-shadow:0 2px 8px rgba(245,158,11,.4)}
+
+/* state toggle tabs */
+.tab-row{display:flex;gap:.4rem;margin-top:1.4rem;background:var(--surface-1);border:1px solid var(--border);padding:.3rem;border-radius:var(--r-pill);width:fit-content}
+.tab-btn{font-family:var(--f-mono);font-size:.74rem;color:var(--text-3);padding:.35rem .85rem;border-radius:var(--r-pill);border:none;background:transparent;cursor:pointer;transition:all var(--d-1)}
+.tab-btn.active{background:var(--surface-3);color:var(--text-1);font-weight:600}
+
+/* ============================================================
+   04 · DIRECTED RELATIONS & SIGNALS
+   ============================================================ */
+.rel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.8rem}
+@media(max-width:900px){.rel-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.rel-grid{grid-template-columns:1fr}}
+.rel-card{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-md);padding:1.1rem;display:flex;flex-direction:column;gap:.6rem}
+.rel-head{display:flex;align-items:center;justify-content:space-between}
+.rel-name{font-family:var(--f-mono);font-weight:600;font-size:.86rem;color:var(--accent-bright)}
+.rel-badge{font-family:var(--f-mono);font-size:.68rem;padding:.15rem .45rem;border-radius:4px;background:var(--surface-2);color:var(--text-3)}
+.rel-desc{font-size:.82rem;color:var(--text-3);line-height:1.4}
+
+/* ============================================================
+   05 · FLOATING CANVAS HUD
+   ============================================================ */
+.hud-preview{
+  position:relative;height:340px;border-radius:var(--r-xl);border:1px solid var(--border);
+  background:radial-gradient(circle at center,rgba(255,255,255,.05) 1.1px,transparent 1.1px),var(--surface-1);
+  background-size:24px 24px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+}
+.hud-bar{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-brd);border-radius:var(--r-pill);padding:.4rem .6rem;
+  display:flex;align-items:center;gap:.4rem;box-shadow:var(--shadow-3);z-index:10;
+}
+.hud-btn{
+  background:transparent;border:none;color:var(--text-2);padding:.45rem .65rem;border-radius:var(--r-pill);
+  font-family:var(--f-mono);font-size:.76rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;
+  transition:all var(--d-1);
+}
+.hud-btn:hover{background:var(--surface-3);color:var(--text-1)}
+.hud-btn.active{background:var(--accent-dim);color:var(--accent-bright)}
+.hud-sep{width:1px;height:18px;background:var(--border)}
+
+/* ============================================================
+   06 · COMMAND PALETTE / SEARCH ⌘K
+   ============================================================ */
+.cmd-modal{
+  max-width:580px;margin-inline:auto;background:var(--surface-1);border:1px solid var(--border-2);
+  border-radius:var(--r-xl);box-shadow:var(--shadow-3);overflow:hidden;margin-top:2rem;
+}
+.cmd-head{display:flex;align-items:center;gap:.8rem;padding:.9rem 1.2rem;border-bottom:1px solid var(--border)}
+.cmd-input{background:transparent;border:none;color:var(--text-1);font-family:inherit;font-size:1.05rem;width:100%;outline:none}
+.cmd-results{padding:.5rem}
+.cmd-item{
+  display:flex;align-items:center;gap:.8rem;padding:.65rem .85rem;border-radius:var(--r-md);
+  cursor:pointer;transition:background var(--d-1);
+}
+.cmd-item:hover,.cmd-item.active{background:var(--surface-2)}
+.cmd-item mark{background:var(--accent-dim);color:var(--accent-bright);padding:0 .2rem;border-radius:3px}
+
+/* ============================================================
+   07 · MOBILE BOTTOM SHEET PREVIEW
+   ============================================================ */
+.phone-frame{
+  width:320px;height:580px;border-radius:36px;border:3px solid var(--border-strong);
+  background:var(--bg);position:relative;overflow:hidden;box-shadow:var(--shadow-3);margin-inline:auto;
+}
+.phone-sheet{
+  position:absolute;bottom:0;left:0;right:0;background:var(--surface-1);border-top:1px solid var(--border-2);
+  border-radius:24px 24px 0 0;padding:1rem 1.1rem;box-shadow:var(--shadow-3);max-height:85%;
+}
+.phone-handle{width:36px;height:4px;background:var(--surface-4);border-radius:2px;margin:0 auto .8rem}
+
+footer.foot{border-top:1px solid var(--border);padding-block:2.6rem 3.4rem;color:var(--text-4)}
+.foot-in{display:flex;flex-wrap:wrap;gap:1.4rem;justify-content:space-between;align-items:flex-end}
+.foot b{color:var(--text-2);font-weight:600}
+.foot .mono{font-family:var(--f-mono);font-size:.76rem}
+.foot-cols{display:flex;gap:2.4rem;flex-wrap:wrap}
+.foot-col span{display:block;font-size:.8rem;line-height:1.9}
+.foot-col .h{color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-size:.68rem;font-family:var(--f-mono)}
+</style>
+
+<!-- ============ SVG ICONS ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-problem" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7.5" x2="12" y2="13"/><circle class="fill" cx="12" cy="16.4" r="1"/></symbol>
+    <symbol id="i-solution" viewBox="0 0 24 24"><polyline points="4.5 12.5 9.5 17.5 19.5 6.5"/></symbol>
+    <symbol id="i-decision" viewBox="0 0 24 24"><path d="M12 3 L21 12 L12 21 L3 12 Z"/></symbol>
+    <symbol id="i-feature" viewBox="0 0 24 24"><path d="M12 2.5 L13.7 9.6 L20.8 11.3 L13.7 13 L12 20.1 L10.3 13 L3.2 11.3 L10.3 9.6 Z"/></symbol>
+    <symbol id="i-component" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/><line x1="9.5" y1="3" x2="9.5" y2="6.5"/><line x1="14.5" y1="3" x2="14.5" y2="6.5"/><line x1="9.5" y1="17.5" x2="9.5" y2="21"/><line x1="14.5" y1="17.5" x2="14.5" y2="21"/><line x1="3" y1="9.5" x2="6.5" y2="9.5"/><line x1="3" y1="14.5" x2="6.5" y2="14.5"/><line x1="17.5" y1="9.5" x2="21" y2="9.5"/><line x1="17.5" y1="14.5" x2="21" y2="14.5"/></symbol>
+    <symbol id="i-risk" viewBox="0 0 24 24"><path d="M12 3.5 L21.5 20 L2.5 20 Z"/><line x1="12" y1="10" x2="12" y2="14.5"/><circle class="fill" cx="12" cy="17.4" r="1"/></symbol>
+    <symbol id="i-test" viewBox="0 0 24 24"><path d="M9.5 3 L9.5 9.5 L4.8 18.5 A1.8 1.8 0 0 0 6.4 21 L17.6 21 A1.8 1.8 0 0 0 19.2 18.5 L14.5 9.5 L14.5 3"/><line x1="8.5" y1="3" x2="15.5" y2="3"/><line x1="7.6" y1="14.5" x2="16.4" y2="14.5"/></symbol>
+    <symbol id="i-benchmark" viewBox="0 0 24 24"><rect x="4.5" y="13" width="3.4" height="6.5" rx="1"/><rect x="10.3" y="8.5" width="3.4" height="11" rx="1"/><rect x="16.1" y="4.5" width="3.4" height="15" rx="1"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><line x1="8.5" y1="8" x2="15.5" y2="8"/><line x1="8.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="13" y2="16"/></symbol>
+    <symbol id="i-lesson" viewBox="0 0 24 24"><path d="M8 13.5 A5.2 5.2 0 1 1 16 13.5 C15 14.6 14.5 15.4 14.3 16.5 L9.7 16.5 C9.5 15.4 9 14.6 8 13.5 Z"/><line x1="9.8" y1="19" x2="14.2" y2="19"/><line x1="10.6" y1="21.2" x2="13.4" y2="21.2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><line x1="8" y1="16" x2="16" y2="8"/><circle cx="6.6" cy="17.4" r="2.7"/><circle cx="17.4" cy="6.6" r="2.7"/></symbol>
+    <symbol id="i-deployment" viewBox="0 0 24 24"><line x1="12" y1="4" x2="12" y2="15"/><polyline points="7.8 8.2 12 4 16.2 8.2"/><path d="M5 20 L19 20"/></symbol>
+    <symbol id="i-log" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7 12 12 15.6 14"/></symbol>
+    <symbol id="i-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></symbol>
+    <symbol id="i-zoom-out" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><line x1="8" y1="11" x2="14" y2="11"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 8 V5 A1 1 0 0 1 5 4 H8"/><path d="M16 4 H19 A1 1 0 0 1 20 5 V8"/><path d="M20 16 V19 A1 1 0 0 1 19 20 H16"/><path d="M8 20 H5 A1 1 0 0 1 4 19 V16"/></symbol>
+    <symbol id="i-hierarchy" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="4.4" rx="1.2"/><rect x="3" y="16.6" width="6" height="4.4" rx="1.2"/><rect x="15" y="16.6" width="6" height="4.4" rx="1.2"/><path d="M12 7.4 V11 M12 11 H6 V16.6 M12 11 H18 V16.6"/></symbol>
+    <symbol id="i-force" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.4"/><circle cx="5.5" cy="16" r="2.4"/><circle cx="18.5" cy="16" r="2.4"/><path d="M11 8 L6.5 14 M13 8 L17.5 14 M7.8 16.6 L16.2 16.6"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5 H20 L14 12.5 V19 L10 21 V12.5 Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/></symbol>
+  </defs>
+</svg>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-in">
+    <div class="brand"><span class="brand-dot"></span>Synapse</div>
+    <div class="nav-links" id="navlinks">
+      <a href="#foundations">Основы</a>
+      <a href="#palette">Палитра</a>
+      <a href="#node">Узел</a>
+      <a href="#relations">Связи</a>
+      <a href="#canvas">Холст</a>
+      <a href="#search">Поиск ⌘K</a>
+      <a href="#mobile">Мобайл</a>
+    </div>
+    <span class="nav-tag">spec v1.0</span>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <div class="eyebrow reveal">Дизайн-система · Cognitive Canvas</div>
+      <h1 class="reveal"><span class="accent">Synapse</span></h1>
+      <p class="hero-lede reveal">Живой холст для проектирования распределённых систем: узлы знаний, направленные связи и совместная работа в реальном времени — в глубокой обсидиановой теме.</p>
+      <div class="hero-chips reveal">
+        <span class="chip"><b>13</b> типов узлов</span>
+        <span class="chip"><b>9</b> типов связей</span>
+        <span class="chip">Deep Dark · Obsidian</span>
+        <span class="chip">Realtime · WS</span>
+      </div>
+    </div>
+    <div class="stage reveal" aria-hidden="true">
+      <div class="stage-bar">
+        <span class="stage-dot"></span><span class="stage-dot"></span><span class="stage-dot"></span>
+        <span class="stage-title">payments-platform · canvas</span>
+        <span class="stage-live">6 online</span>
+      </div>
+      <svg class="constellation" id="constellation" viewBox="0 0 1000 560" role="img" aria-label="Граф узлов с потоком сигналов">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M1 1 L9 5 L1 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path id="e1" d="M470 92 C 410 100, 380 112, 322 122" fill="none" stroke="#10B981" stroke-opacity=".55" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <path id="e2" d="M760 182 C 720 150, 705 112, 672 92" fill="none" stroke="#8B5CF6" stroke-opacity=".55" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <path id="e3" d="M700 332 C 792 322, 852 278, 860 216" fill="none" stroke="#3B82F6" stroke-opacity=".55" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <circle r="3.4" fill="#34D399" filter="url(#soft)"><animateMotion dur="2.8s" repeatCount="indefinite"><mpath href="#e1"/></animateMotion></circle>
+        <circle r="3.4" fill="#60A5FA" filter="url(#soft)"><animateMotion dur="3.4s" begin="0.6s" repeatCount="indefinite"><mpath href="#e3"/></animateMotion></circle>
+        <!-- nodes -->
+        <g class="hn" font-family="JetBrains Mono, monospace">
+          <g transform="translate(120,90)">
+            <rect width="202" height="64" rx="13" fill="#1F1F23" stroke="#EF4444" stroke-opacity=".45"/>
+            <circle cx="20" cy="22" r="5" fill="#EF4444"/>
+            <text x="34" y="26" fill="#EF4444" font-size="12" font-weight="600">P-007</text>
+            <text x="20" y="48" fill="#FAFAFA" font-size="13" font-family="Plus Jakarta Sans, sans-serif" font-weight="600">Гонки при записи в кэш</text>
+          </g>
+          <g transform="translate(470,60)">
+            <rect width="202" height="64" rx="13" fill="#1F1F23" stroke="#10B981" stroke-opacity=".45"/>
+            <circle cx="20" cy="22" r="5" fill="#10B981"/>
+            <text x="34" y="26" fill="#10B981" font-size="12" font-weight="600">S-012</text>
+            <text x="20" y="48" fill="#FAFAFA" font-size="13" font-family="Plus Jakarta Sans, sans-serif" font-weight="600">CAS + версионирование</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- ============ 01 · FOUNDATIONS ============ -->
+<section class="section" id="foundations">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">01 · Концепция</div>
+      <h2 class="sec-title">Четыре принципа обсидиановой системы</h2>
+      <p class="sec-desc">Дизайн подчинён работе на бесконечном холсте: интерфейс отступает, данные светятся. Цвет несёт смысл, движение показывает поток, стекло разделяет слои без веса.</p>
+    </div>
+    <div class="principles">
+      <div class="pcard reveal"><div class="pnum">P1</div><h3>Глубокий обсидиан</h3><p>Нейтральный тёмный <span class="chip" style="padding:.05em .35em">#09090B</span> и слои поверхностей вместо чистого чёрного. Глаз отдыхает в долгих сессиях.</p><div class="glowbar"></div></div>
+      <div class="pcard reveal"><div class="pnum">P2</div><h3>Семантическое свечение</h3><p>Цвет = тип. Выбранный узел и активная связь мягко светятся своим оттенком — статус читается периферийным зрением.</p><div class="glowbar"></div></div>
+      <div class="pcard reveal"><div class="pnum">P3</div><h3>Волосяное стекло</h3><p>Границы 1px в <span class="chip" style="padding:.05em .35em">rgba(255,255,255,.08)</span> и backdrop-blur подложки. Плавающие панели, а не тяжёлые блоки.</p><div class="glowbar"></div></div>
+      <div class="pcard reveal"><div class="pnum">P4</div><h3>Сигнал как движение</h3><p>«Бегущая точка» вдоль связи показывает поток события или трафика. Анимация функциональна, не декоративна.</p><div class="glowbar"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · PALETTE ============ -->
+<section class="section" id="palette">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">02 · Палитра</div>
+      <h2 class="sec-title">Цвет несёт смысл</h2>
+      <p class="sec-desc">Два уровня иерархии: <b>8 несущих типов</b> в насыщенных оттенках задают архитектурный скелет, <b>5 вспомогательных</b> приглушены и отступают. Хром интерфейса нейтрален — акцент <code>#818CF8</code> никогда не путается с данными.</p>
+    </div>
+
+    <div class="pal-tier"><span class="lbl">Несущие типы</span><span class="rule"></span><span class="cnt">8 / vivid</span></div>
+    <div class="pal-grid reveal">
+      <button class="sw t-problem" data-hex="#EF4444"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-problem"/></svg></span><span class="sw-id">P-•••</span></div><div><div class="sw-label">Проблема</div><div class="sw-type">problem</div></div><div class="sw-bottom"><span class="sw-hex">#EF4444</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-solution" data-hex="#10B981"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-solution"/></svg></span><span class="sw-id">S-•••</span></div><div><div class="sw-label">Решение</div><div class="sw-type">solution</div></div><div class="sw-bottom"><span class="sw-hex">#10B981</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-decision" data-hex="#8B5CF6"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-decision"/></svg></span><span class="sw-id">D-•••</span></div><div><div class="sw-label">Решение · ADR</div><div class="sw-type">decision</div></div><div class="sw-bottom"><span class="sw-hex">#8B5CF6</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-feature" data-hex="#3B82F6"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-feature"/></svg></span><span class="sw-id">F-•••</span></div><div><div class="sw-label">Фича</div><div class="sw-type">feature</div></div><div class="sw-bottom"><span class="sw-hex">#3B82F6</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-component" data-hex="#F59E0B"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-component"/></svg></span><span class="sw-id">C-•••</span></div><div><div class="sw-label">Компонент</div><div class="sw-type">component</div></div><div class="sw-bottom"><span class="sw-hex">#F59E0B</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-risk" data-hex="#EC4899"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-risk"/></svg></span><span class="sw-id">R-•••</span></div><div><div class="sw-label">Риск</div><div class="sw-type">risk</div></div><div class="sw-bottom"><span class="sw-hex">#EC4899</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-benchmark" data-hex="#6366F1"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-benchmark"/></svg></span><span class="sw-id">B-•••</span></div><div><div class="sw-label">Бенчмарк</div><div class="sw-type">benchmark</div></div><div class="sw-bottom"><span class="sw-hex">#6366F1</span><span class="sw-copy">copy ⧉</span></div></button>
+      <button class="sw t-deployment" data-hex="#22C55E"><div class="sw-top"><span class="tchip"><svg class="ico"><use href="#i-deployment"/></svg></span><span class="sw-id">M-•••</span></div><div><div class="sw-label">Деплой</div><div class="sw-type">deployment</div></div><div class="sw-bottom"><span class="sw-hex">#22C55E</span><span class="sw-copy">copy ⧉</span></div></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 · FLAGSHIP NODECARD ============ -->
+<section class="section" id="node">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">03 · Карточка узла</div>
+      <h2 class="sec-title">Флагманский компонент NodeCard</h2>
+      <p class="sec-desc">Атомарная единица холста. Карточка содержит значок типа, Display ID, статус-пилюлю, заголовок, краткое описание, теги и аватар автора с поддержкой интерактивных состояний (Selected, Soft-Locked).</p>
+    </div>
+
+    <!-- State Switcher -->
+    <div class="tab-row reveal">
+      <button class="tab-btn active" onclick="setCardState('default')">Default</button>
+      <button class="tab-btn" onclick="setCardState('selected')">Selected (Glow)</button>
+      <button class="tab-btn" onclick="setCardState('locked')">Soft-Locked (Live)</button>
+    </div>
+
+    <!-- Node Grid Showcase -->
+    <div class="node-grid reveal" id="nodeCardGrid">
+      <!-- Problem -->
+      <div class="ncard t-problem" onclick="toggleSelect(this)">
+        <div class="ncard-head">
+          <span class="tchip sm"><svg class="ico"><use href="#i-problem"/></svg></span>
+          <span class="ncard-id">P-007</span>
+          <span class="pill crit ncard-pill">blocked</span>
+        </div>
+        <div class="ncard-title">Гонки при параллельной записи в сессионный кэш</div>
+        <div class="ncard-desc">Конкурентные запросы перезаписывают JWT claims без атомарной блокировки.</div>
+        <div class="ncard-foot">
+          <div class="ncard-tags"><span class="ncard-tag">#redis</span><span class="ncard-tag">#race</span></div>
+          <div class="ncard-avatar">GA</div>
+        </div>
+      </div>
+
+      <!-- Solution -->
+      <div class="ncard t-solution" onclick="toggleSelect(this)">
+        <div class="ncard-head">
+          <span class="tchip sm"><svg class="ico"><use href="#i-solution"/></svg></span>
+          <span class="ncard-id">S-012</span>
+          <span class="pill ok ncard-pill">completed</span>
+        </div>
+        <div class="ncard-title">CAS + Версионирование через LockStore</div>
+        <div class="ncard-desc">Внедрен in-memory мьютекс с авто-экспирацией через 10 минут.</div>
+        <div class="ncard-foot">
+          <div class="ncard-tags"><span class="ncard-tag">#go-sync</span><span class="ncard-tag">#cas</span></div>
+          <div class="ncard-avatar">LA</div>
+        </div>
+      </div>
+
+      <!-- Decision (ADR) -->
+      <div class="ncard t-decision" onclick="toggleSelect(this)">
+        <div class="ncard-head">
+          <span class="tchip sm"><svg class="ico"><use href="#i-decision"/></svg></span>
+          <span class="ncard-id">D-003</span>
+          <span class="pill ok ncard-pill">accepted</span>
+        </div>
+        <div class="ncard-title">ADR: Использование PostgreSQL tsvector FTS</div>
+        <div class="ncard-desc">Отказ от OpenSearch в пользу нативного GIN-индекса в Postgres (15ms SLO).</div>
+        <div class="ncard-foot">
+          <div class="ncard-tags"><span class="ncard-tag">#adr</span><span class="ncard-tag">#postgres</span></div>
+          <div class="ncard-avatar">CTO</div>
+        </div>
+      </div>
+
+      <!-- Benchmark (Smart Card with Bar) -->
+      <div class="ncard t-benchmark" onclick="toggleSelect(this)">
+        <div class="ncard-head">
+          <span class="tchip sm"><svg class="ico"><use href="#i-benchmark"/></svg></span>
+          <span class="ncard-id">B-014</span>
+          <span class="pill info ncard-pill">0.12ms</span>
+        </div>
+        <div class="ncard-title">FTS Поиск: 0.12ms @ 5,000 нод</div>
+        <div class="bench-bar"><div class="bench-fill" style="width: 88%"></div></div>
+        <div class="ncard-desc" style="margin-top:.4rem">100 конкурентных воркеров, нулевые пики потребления RAM.</div>
+        <div class="ncard-foot">
+          <div class="ncard-tags"><span class="ncard-tag">#benchmark</span><span class="ncard-tag">#p99</span></div>
+          <div class="ncard-avatar">PE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 · RELATIONS & SIGNALS ============ -->
+<section class="section" id="relations">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">04 · Связи графа</div>
+      <h2 class="sec-title">9 типов направленных связей</h2>
+      <p class="sec-desc">Связи показывают архитектурные зависимости, причинно-следственные связи и валидацию гипотез. По активным связям перемещаются световые импульсы.</p>
+    </div>
+
+    <div class="rel-grid reveal">
+      <div class="rel-card"><div class="rel-head"><span class="rel-name">depends_on</span><span class="rel-badge">зависит от</span></div><div class="rel-desc">Компонент А требует наличия сервиса или базы Б.</div></div>
+      <div class="rel-card"><div class="rel-head"><span class="rel-name">implements</span><span class="rel-badge">реализует</span></div><div class="rel-desc">Фича или сервис реализует принятое архитектурное решение (ADR).</div></div>
+      <div class="rel-card"><div class="rel-head"><span class="rel-name">validates</span><span class="rel-badge">подтверждает</span></div><div class="rel-desc">Бенчмарк или тест подтверждает эффективность решения.</div></div>
+      <div class="rel-card"><div class="rel-head"><span class="rel-name">derives_from</span><span class="rel-badge">порождено</span></div><div class="rel-desc">Решение вытекает из зафиксированной проблемы.</div></div>
+      <div class="rel-card"><div class="rel-head"><span class="rel-name">caused_by</span><span class="rel-badge">вызвано</span></div><div class="rel-desc">Инцидент или проблема вызвана конкретным деплоем или багом.</div></div>
+      <div class="rel-card"><div class="rel-head"><span class="rel-name">supersedes</span><span class="rel-badge">заменяет</span></div><div class="rel-desc">Новое решение отменяет и заменяет устаревший подход.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 · CANVAS HUD ============ -->
+<section class="section" id="canvas">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">05 · Холст &amp; HUD</div>
+      <h2 class="sec-title">Плавающий командный остров CanvasHUD</h2>
+      <p class="sec-desc">Компактная стеклянная панель в нижней части экрана с доступом к авто-раскладкам, зуму и фильтрам в 1 клик.</p>
+    </div>
+
+    <div class="hud-preview reveal">
+      <div class="hud-bar">
+        <button class="hud-btn" title="Zoom In"><svg class="ico"><use href="#i-zoom-in"/></svg></button>
+        <button class="hud-btn" title="Zoom Out"><svg class="ico"><use href="#i-zoom-out"/></svg></button>
+        <button class="hud-btn" title="Fit Screen"><svg class="ico"><use href="#i-fit"/></svg> 100%</button>
+        <div class="hud-sep"></div>
+        <button class="hud-btn active" title="Hierarchical Layout"><svg class="ico"><use href="#i-hierarchy"/></svg> Иерархия</button>
+        <button class="hud-btn" title="Force Layout"><svg class="ico"><use href="#i-force"/></svg> Граф</button>
+        <div class="hud-sep"></div>
+        <button class="hud-btn" title="Search"><svg class="ico"><use href="#i-search"/></svg> ⌘K</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 · COMMAND PALETTE ============ -->
+<section class="section" id="search">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">06 · Командный центр</div>
+      <h2 class="sec-title">Глобальный поиск ⌘K</h2>
+      <p class="sec-desc">Мгновенный полнотекстовый поиск по всем 13 типам узлов с фильтрацией на лету и подсветкой совпадений.</p>
+    </div>
+
+    <div class="cmd-modal reveal">
+      <div class="cmd-head">
+        <svg class="ico" style="color:var(--text-3)"><use href="#i-search"/></svg>
+        <input class="cmd-input" type="text" value="postgre" placeholder="Поиск по графу знаний...">
+        <span class="chip" style="padding:.1rem .4rem;font-size:10px">ESC</span>
+      </div>
+      <div class="cmd-results">
+        <div class="cmd-item active">
+          <span class="tchip sm t-decision"><svg class="ico"><use href="#i-decision"/></svg></span>
+          <div>
+            <div style="font-weight:600;font-size:.9rem">ADR: Использование <mark>Postgre</mark>SQL tsvector FTS</div>
+            <div style="font-size:.76rem;color:var(--text-3)">D-003 · accepted · #postgres</div>
+          </div>
+        </div>
+        <div class="cmd-item">
+          <span class="tchip sm t-component"><svg class="ico"><use href="#i-component"/></svg></span>
+          <div>
+            <div style="font-weight:600;font-size:.9rem">Relational &amp; Graph Storage (<mark>Postgre</mark>s 16)</div>
+            <div style="font-size:.76rem;color:var(--text-3)">C-008 · completed · #storage</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 · MOBILE BOTTOM SHEET ============ -->
+<section class="section" id="mobile">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">07 · Мобильный UX</div>
+      <h2 class="sec-title">Эргономика шторки NodeDetailBottomSheet</h2>
+      <p class="sec-desc">Оптимизировано для управления одной рукой: зона большого пальца, свайп-жесты, тактильный отклик и крупные тач-таргеты (&gt;44px).</p>
+    </div>
+
+    <div class="phone-frame reveal">
+      <div class="phone-sheet">
+        <div class="phone-handle"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+          <span class="ncard-id t-decision" style="color:var(--t-decision)">D-003</span>
+          <span class="pill ok">accepted</span>
+        </div>
+        <h4 style="font-size:1.05rem;margin-bottom:.5rem">ADR: Использование PostgreSQL tsvector FTS</h4>
+        <p style="font-size:.82rem;color:var(--text-3);line-height:1.45">Отказ от отдельного кластера OpenSearch для экономии RAM и снижения задержек.</p>
+        <div style="display:flex;gap:.4rem;margin-top:.8rem">
+          <span class="ncard-tag">#postgres</span>
+          <span class="ncard-tag">#fts</span>
+          <span class="ncard-tag">#gin</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <div class="brand" style="margin-bottom:.6rem"><span class="brand-dot"></span>Synapse</div>
+      <span class="mono">Design system &amp; component spec · v1.0</span>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col"><span class="h">Type</span><span>Sora</span><span>Plus Jakarta Sans</span><span>JetBrains Mono</span></div>
+      <div class="foot-col"><span class="h">Ground</span><span>Obsidian #09090B</span><span>Hairline .08</span><span>Semantic glow</span></div>
+      <div class="foot-col"><span class="h">Scope</span><span>13 nodes · 9 relations</span><span>Canvas · HUD · ⌘K</span><span>Mobile bottom sheet</span></div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce){
+    document.body.classList.add('reveal-on');
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+    },{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  }
+
+  // Active nav on scroll
+  var links = Array.prototype.slice.call(document.querySelectorAll('#navlinks a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  var navio = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){
+        var id = '#'+e.target.id;
+        links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')===id); });
+      }
+    });
+  },{threshold:.2,rootMargin:'-40% 0px -50% 0px'});
+  secs.forEach(function(s){ if(s) navio.observe(s); });
+
+  // Palette Copy Helper
+  document.querySelectorAll('.sw').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var hex = btn.getAttribute('data-hex');
+      if(hex){
+        navigator.clipboard.writeText(hex).then(function(){
+          window.__toast('Скопировано в буфер: ' + hex);
+        });
+      }
+    });
+  });
+
+  window.__toast = function(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(window.__tt); window.__tt = setTimeout(function(){ t.classList.remove('show'); },1600);
+  };
+})();
+
+function toggleSelect(el){
+  el.classList.toggle('selected');
+}
+
+function setCardState(state){
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  event.target.classList.add('active');
+  var cards = document.querySelectorAll('.ncard');
+  cards.forEach(function(c){
+    c.classList.remove('selected', 'locked');
+    if(state === 'selected') c.classList.add('selected');
+    if(state === 'locked') c.classList.add('locked');
+  });
+}
+</script>
+</body>
+</html>
