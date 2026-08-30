@@ -32,13 +32,22 @@ class SynapseWebSocketClient {
     this.projectId = projectId;
     this.isIntentionalClose = false;
 
-    const wsUrl = `ws://87.58.204.138/ws?token=${encodeURIComponent(token)}`;
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.joinProject(projectId);
+      return;
+    }
+
+    const wsUrl = `ws://87.58.204.138/ws?token=${encodeURIComponent(token)}${
+      projectId ? `&project_id=${encodeURIComponent(projectId)}` : ''
+    }`;
 
     try {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        this.joinProject(projectId);
+        if (this.projectId) {
+          this.joinProject(this.projectId);
+        }
         this.startHeartbeat();
       };
 

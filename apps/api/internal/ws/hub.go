@@ -29,12 +29,19 @@ type BroadcastMsg struct {
 	Payload         []byte
 }
 
+type RoomChange struct {
+	Client       *Client
+	OldProjectID string
+	NewProjectID string
+}
+
 type Hub struct {
 	mu         sync.RWMutex
 	rooms      map[string]map[*Client]struct{} // projectID -> clients
 	broadcast  chan BroadcastMsg
 	register   chan *Client
 	unregister chan *Client
+	changeRoom chan *RoomChange
 }
 
 func NewHub() *Hub {
@@ -42,6 +49,7 @@ func NewHub() *Hub {
 		broadcast:  make(chan BroadcastMsg, 256),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		changeRoom: make(chan *RoomChange, 64),
 		rooms:      make(map[string]map[*Client]struct{}),
 	}
 }
@@ -55,6 +63,23 @@ func (h *Hub) Run() {
 				h.rooms[client.ProjectID] = make(map[*Client]struct{})
 			}
 			h.rooms[client.ProjectID][client] = struct{}{}
+			h.mu.Unlock()
+		case change := <-h.changeRoom:
+			h.mu.Lock()
+			if change.OldProjectID != "" {
+				if oldRoom, ok := h.rooms[change.OldProjectID]; ok {
+					delete(oldRoom, change.Client)
+					if len(oldRoom) == 0 {
+						delete(h.rooms, change.OldProjectID)
+					}
+				}
+			}
+			if change.NewProjectID != "" {
+				if _, ok := h.rooms[change.NewProjectID]; !ok {
+					h.rooms[change.NewProjectID] = make(map[*Client]struct{})
+				}
+				h.rooms[change.NewProjectID][change.Client] = struct{}{}
+			}
 			h.mu.Unlock()
 		case client := <-h.unregister:
 			h.mu.Lock()

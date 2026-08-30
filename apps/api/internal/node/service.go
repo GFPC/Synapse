@@ -42,7 +42,7 @@ func (s *NodeService) Create(ctx context.Context, projectID, userID string, inpu
 		s.hub.BroadcastToProject(projectID, ws.Event{
 			Type: ws.EventNodeCreated,
 			Data: node,
-		}, userID)
+		}, "")
 	}
 
 	return node, nil
@@ -75,7 +75,7 @@ func (s *NodeService) Update(ctx context.Context, id, userID string, input domai
 		s.hub.BroadcastToProject(*node.ProjectID, ws.Event{
 			Type: ws.EventNodeUpdated,
 			Data: node,
-		}, userID)
+		}, "")
 	}
 
 	return node, nil
@@ -99,7 +99,7 @@ func (s *NodeService) Delete(ctx context.Context, id, userID string) error {
 		s.hub.BroadcastToProject(*node.ProjectID, ws.Event{
 			Type: ws.EventNodeDeleted,
 			Data: map[string]string{"id": id},
-		}, userID)
+		}, "")
 	}
 
 	return nil
@@ -120,7 +120,7 @@ func (s *NodeService) CreateRelation(ctx context.Context, fromID, toID string, r
 		s.hub.BroadcastToProject(*node.ProjectID, ws.Event{
 			Type: ws.EventRelationCreated,
 			Data: rel,
-		}, userID)
+		}, "")
 	}
 
 	return rel, nil

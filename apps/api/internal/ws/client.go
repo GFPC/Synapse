@@ -62,8 +62,14 @@ func (c *Client) ReadPump() {
 		if typ, ok := msg["type"].(string); ok {
 			switch typ {
 			case "join_project":
-				if pid, ok := msg["project_id"].(string); ok {
+				if pid, ok := msg["project_id"].(string); ok && pid != "" {
+					oldPID := c.ProjectID
 					c.ProjectID = pid
+					c.hub.changeRoom <- &RoomChange{
+						Client:       c,
+						OldProjectID: oldPID,
+						NewProjectID: pid,
+					}
 				}
 			case "ping":
 				c.conn.WriteControl(websocket.PongMessage, []byte{}, time.Now().Add(writeWait))

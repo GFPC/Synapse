@@ -63,6 +63,8 @@ interface SynapseMobileState {
 
   // Actions
   init: () => Promise<void>;
+  initWebSocket: () => void;
+  syncNodesSilently: (projectId: string) => Promise<void>;
   checkServerHealth: () => Promise<void>;
   fetchProjects: () => Promise<void>;
   selectProject: (projectId: string) => Promise<void>;
@@ -161,6 +163,7 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
   init: async () => {
     set({ isLoading: true });
     try {
+      get().initWebSocket();
       await get().checkServerHealth();
       const loginRes = await mobileApiClient.post('/api/auth/login', {
         email: 'architect@synapse.local',
@@ -176,11 +179,62 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
         set({ currentUser: loginData.user, isConnected: true });
       }
       await get().fetchProjects();
+
+      // Start silent background auto-sync polling every 4 seconds as safety net
+      if (!(global as any).__synapseSyncInterval) {
+        (global as any).__synapseSyncInterval = setInterval(() => {
+          const actProj = get().activeProject;
+          if (actProj && get().isConnected) {
+            get().syncNodesSilently(actProj.id);
+          }
+        }, 4000);
+      }
     } catch {
       set({ isConnected: false });
     } finally {
       set({ isLoading: false });
     }
+  },
+
+  syncNodesSilently: async (projectId: string) => {
+    try {
+      const nodes = await nodesApi.listByProject(projectId);
+      if (get().activeProject?.id !== projectId) return;
+      set({ nodes });
+    } catch {
+      // Silent catch for background polling
+    }
+  },
+
+  initWebSocket: () => {
+    if ((global as any).__synapseWsSubscribed) return;
+    (global as any).__synapseWsSubscribed = true;
+
+    synapseWS.subscribe((event: WSEvent) => {
+      if (event.type === 'node_created' && event.data) {
+        const newNode = event.data;
+        set((s) => {
+          if (newNode.project_id && s.activeProject && newNode.project_id !== s.activeProject.id) {
+            return s;
+          }
+          return { nodes: [newNode, ...s.nodes.filter((n) => n.id !== newNode.id)] };
+        });
+      } else if (event.type === 'node_updated' && event.data) {
+        const updated = event.data;
+        set((s) => ({
+          nodes: s.nodes.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)),
+        }));
+      } else if (event.type === 'node_deleted' && event.data) {
+        const delId = event.data?.id || event.data;
+        set((s) => ({ nodes: s.nodes.filter((n) => n.id !== delId) }));
+      } else if (event.type === 'relation_created' && event.data) {
+        const newRel = event.data;
+        set((s) => ({ relations: [...s.relations, newRel] }));
+      } else if (event.type === 'relation_deleted' && event.data) {
+        const relId = event.data?.id || event.data;
+        set((s) => ({ relations: s.relations.filter((r) => r.id !== relId) }));
+      }
+    });
   },
 
   checkServerHealth: async () => {
@@ -224,26 +278,6 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
     const token = mobileApiClient.getAccessToken();
     if (token && get().settings.enableLiveWs) {
       synapseWS.connect(token, projectId);
-      synapseWS.subscribe((event: WSEvent) => {
-        if (event.type === 'node_created' && event.data) {
-          const newNode = event.data;
-          set((s) => ({ nodes: [newNode, ...s.nodes.filter((n) => n.id !== newNode.id)] }));
-        } else if (event.type === 'node_updated' && event.data) {
-          const updated = event.data;
-          set((s) => ({
-            nodes: s.nodes.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)),
-          }));
-        } else if (event.type === 'node_deleted' && event.data) {
-          const delId = event.data.id || event.data;
-          set((s) => ({ nodes: s.nodes.filter((n) => n.id !== delId) }));
-        } else if (event.type === 'relation_created' && event.data) {
-          const newRel = event.data;
-          set((s) => ({ relations: [...s.relations, newRel] }));
-        } else if (event.type === 'relation_deleted' && event.data) {
-          const relId = event.data.id || event.data;
-          set((s) => ({ relations: s.relations.filter((r) => r.id !== relId) }));
-        }
-      });
     }
   },
 
