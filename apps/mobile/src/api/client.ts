@@ -43,9 +43,60 @@ class MobileApiClient {
     return this.token;
   }
 
+  /** Attempt silent token refresh using refresh_token, or re-login if refresh fails */
+  private async tryRefresh(): Promise<boolean> {
+    // 1. Try refresh token if available
+    if (this.refreshToken) {
+      try {
+        const url = `${this.baseUrl}/api/auth/refresh`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: this.refreshToken }),
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          const token = resData?.data?.access_token || resData?.tokens?.access_token;
+          if (token) {
+            this.token = token;
+            return true;
+          }
+        }
+      } catch {
+        // Refresh token failed, fall through to re-login
+      }
+    }
+
+    // 2. Re-login with default credentials if token refresh failed
+    try {
+      const loginUrl = `${this.baseUrl}/api/auth/login`;
+      const res = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'architect@synapse.local',
+          password: 'password123',
+        }),
+      });
+      if (res.ok) {
+        const resData = await res.json();
+        const tokens = resData?.data?.tokens || resData?.tokens;
+        if (tokens?.access_token) {
+          this.setTokens(tokens.access_token, tokens.refresh_token);
+          return true;
+        }
+      }
+    } catch {
+      // Re-login failed
+    }
+
+    return false;
+  }
+
   public async request<T = any>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    _isRetry = false
   ): Promise<ApiResponse<T>> {
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
     const headers = new Headers(options.headers || {});
@@ -66,6 +117,14 @@ class MobileApiClient {
 
       if (response.status === 204) {
         return { data: null as any };
+      }
+
+      // Auto-refresh token and retry on 401 (expired token)
+      if (response.status === 401 && !_isRetry) {
+        const refreshed = await this.tryRefresh();
+        if (refreshed) {
+          return this.request<T>(endpoint, options, true);
+        }
       }
 
       const resData = await response.json();
