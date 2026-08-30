@@ -39,23 +39,39 @@ export const SynapseCanvasNode = memo(({ data, selected }: NodeProps) => {
       {/* Handles for dragging connections */}
       <Handle
         type="target"
+        id="top-target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125"
+        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125 transition-transform"
       />
       <Handle
         type="source"
+        id="top-source"
+        position={Position.Top}
+        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="source"
+        id="bottom-source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125"
+        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125 transition-transform"
       />
       <Handle
         type="target"
+        id="bottom-target"
+        position={Position.Bottom}
+        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125 transition-transform"
+      />
+      <Handle
+        type="target"
+        id="left-target"
         position={Position.Left}
-        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125"
+        className="!w-2.5 !h-2.5 !bg-accent !border-2 !border-surface hover:!scale-125 transition-transform"
       />
       <Handle
         type="source"
+        id="right-source"
         position={Position.Right}
-        className="!w-3 !h-3 !bg-accent !border-2 !border-surface hover:!scale-125"
+        className="!w-2.5 !h-2.5 !bg-accent !border-2 !border-surface hover:!scale-125 transition-transform"
       />
 
       {/* Active Editor / Soft Lock Alert Banner */}
