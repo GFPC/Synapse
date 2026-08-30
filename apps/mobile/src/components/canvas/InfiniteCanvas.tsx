@@ -29,20 +29,20 @@ export const InfiniteCanvas: React.FC<Props> = ({
   scale = 1.0,
   onSelectNode,
 }) => {
-  const [pan, setPan] = useState({ x: 24, y: 40 });
-  const lastPanRef = useRef({ x: 24, y: 40 });
+  const [pan, setPan] = useState({ x: 20, y: 30 });
+  const lastPanRef = useRef({ x: 20, y: 30 });
 
-  // Auto-center camera on the active node cluster
+  // Auto-center camera on nodes
   useEffect(() => {
     if (nodes.length > 0) {
       const minX = Math.min(...nodes.map((n) => n.canvas_x || 0));
       const minY = Math.min(...nodes.map((n) => n.canvas_y || 0));
-      const initialPan = {
-        x: Math.max(20, 36 - minX),
-        y: Math.max(20, 36 - minY),
+      const targetPan = {
+        x: Math.max(10, 40 - minX),
+        y: Math.max(10, 40 - minY),
       };
-      setPan(initialPan);
-      lastPanRef.current = initialPan;
+      setPan(targetPan);
+      lastPanRef.current = targetPan;
     }
   }, [nodes.length]);
 
@@ -69,7 +69,7 @@ export const InfiniteCanvas: React.FC<Props> = ({
 
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
-      {/* Background Dot Matrix Grid */}
+      {/* Background Grid */}
       <View style={styles.gridOverlay} pointerEvents="none" />
 
       {/* Canvas Transform Layer */}
@@ -85,7 +85,7 @@ export const InfiniteCanvas: React.FC<Props> = ({
           },
         ]}
       >
-        {/* Render Directed SVG Relation Curves */}
+        {/* Render SVG Relation Edges */}
         <RelationEdges
           nodes={nodes}
           relations={relations}
@@ -119,7 +119,7 @@ export const InfiniteCanvas: React.FC<Props> = ({
         })}
       </View>
 
-      {/* Translucent Minimap in top-right */}
+      {/* Minimap in top-right */}
       <CanvasMinimap nodes={nodes} pan={pan} scale={scale} />
     </View>
   );
@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 1,
-    height: 1,
+    width: 4000,
+    height: 4000,
   },
   nodeWrapper: {
     position: 'absolute',

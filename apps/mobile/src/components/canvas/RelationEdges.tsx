@@ -18,8 +18,8 @@ export const RelationEdges: React.FC<Props> = ({ nodes, relations, selectedNodeI
   nodes.forEach((n) => nodeMap.set(n.id, n));
 
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      <Svg style={StyleSheet.absoluteFillObject}>
+    <View style={styles.container} pointerEvents="none">
+      <Svg width="4000" height="4000" style={styles.svg}>
         <Defs>
           {Object.entries(RELATION_CONFIG).map(([type, config]) => (
             <Marker
@@ -61,7 +61,7 @@ export const RelationEdges: React.FC<Props> = ({ nodes, relations, selectedNodeI
 
           return (
             <React.Fragment key={rel.id}>
-              {/* Outer Glow Path */}
+              {/* Glow */}
               {isHighlight && (
                 <Path
                   d={pathD}
@@ -72,7 +72,7 @@ export const RelationEdges: React.FC<Props> = ({ nodes, relations, selectedNodeI
                 />
               )}
 
-              {/* Main Line */}
+              {/* Main Curve */}
               <Path
                 d={pathD}
                 stroke={config.color}
@@ -83,7 +83,7 @@ export const RelationEdges: React.FC<Props> = ({ nodes, relations, selectedNodeI
                 markerEnd={`url(#arrow-${rel.type})`}
               />
 
-              {/* Source node dot */}
+              {/* Source Circle */}
               <Circle
                 cx={x1}
                 cy={y1}
@@ -96,7 +96,7 @@ export const RelationEdges: React.FC<Props> = ({ nodes, relations, selectedNodeI
         })}
       </Svg>
 
-      {/* Floating Relation Badges */}
+      {/* Floating Badges */}
       {relations.map((rel) => {
         const fromNode = nodeMap.get(rel.from_node_id);
         const toNode = nodeMap.get(rel.to_node_id);
@@ -130,6 +130,18 @@ export const RelationEdges: React.FC<Props> = ({ nodes, relations, selectedNodeI
 };
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 4000,
+    height: 4000,
+  },
+  svg: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
   relBadge: {
     position: 'absolute',
     paddingHorizontal: 6,
