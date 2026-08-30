@@ -25,6 +25,12 @@ func (s *NodeService) Create(ctx context.Context, projectID, userID string, inpu
 	if len(input.Title) < 1 || len(input.Title) > 500 {
 		return domain.Node{}, domain.ErrBadRequest
 	}
+	if input.Visibility == "" {
+		input.Visibility = domain.VisibilityShared
+	}
+	if input.Status == "" {
+		input.Status = "in_progress"
+	}
 
 	node, err := s.repo.Create(ctx, projectID, userID, input)
 	if err != nil {

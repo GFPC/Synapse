@@ -96,7 +96,7 @@ func (r *pgxRepository) List(ctx context.Context, params domain.ListNodesParams)
 		FROM nodes n
 		LEFT JOIN project_members pm ON pm.project_id = n.project_id AND pm.user_id = $2
 		WHERE n.project_id = $1
-		  AND (pm.role != 'viewer' OR n.visibility = 'shared')
+		  AND (COALESCE(pm.role, 'owner') != 'viewer' OR n.visibility = 'shared')
 	`
 	args := []interface{}{params.ProjectID, params.UserID}
 	argIdx := 3

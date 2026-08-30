@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -26,14 +26,28 @@ export const InfiniteCanvas: React.FC<Props> = ({
   scale = 1.0,
   onSelectNode,
 }) => {
-  const [pan, setPan] = useState({ x: SCREEN_WIDTH / 2, y: 150 });
-  const lastPanRef = useRef({ x: SCREEN_WIDTH / 2, y: 150 });
+  const [pan, setPan] = useState({ x: 24, y: 40 });
+  const lastPanRef = useRef({ x: 24, y: 40 });
+
+  // Center on first node when loaded
+  useEffect(() => {
+    if (nodes.length > 0) {
+      const minX = Math.min(...nodes.map((n) => n.canvas_x || 0));
+      const minY = Math.min(...nodes.map((n) => n.canvas_y || 0));
+      const initialPan = {
+        x: Math.max(20, 40 - minX),
+        y: Math.max(20, 40 - minY),
+      };
+      setPan(initialPan);
+      lastPanRef.current = initialPan;
+    }
+  }, [nodes.length]);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2;
+        return Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3;
       },
       onPanResponderGrant: () => {
         lastPanRef.current = { ...pan };
@@ -110,10 +124,10 @@ const styles = StyleSheet.create({
   },
   canvasArea: {
     position: 'absolute',
-    width: 6000,
-    height: 6000,
-    left: -3000,
-    top: -3000,
+    left: 0,
+    top: 0,
+    width: 1,
+    height: 1,
   },
   nodeWrapper: {
     position: 'absolute',
