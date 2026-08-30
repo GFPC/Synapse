@@ -20,7 +20,7 @@ func TestNodeCRUD_HappyPath(t *testing.T) {
 
 func TestNodeVisibility_ViewerCannotSeeInternal(t *testing.T) {
 	pool := SetupTestDB(t)
-	e := SetupTestApp(pool)
+	_ = SetupTestApp(pool)
 	defer CleanupDB(t, pool)
 
 	// token := registerAndLogin(t, e, "viewer")
@@ -33,7 +33,7 @@ func TestNodeVisibility_ViewerCannotSeeInternal(t *testing.T) {
 
 func TestNodeVisibility_ViewerCanSeeShared(t *testing.T) {
 	pool := SetupTestDB(t)
-	e := SetupTestApp(pool)
+	_ = SetupTestApp(pool)
 	defer CleanupDB(t, pool)
 	// Similar assert 200
 }
