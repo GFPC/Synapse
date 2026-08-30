@@ -1,0 +1,881 @@
+import type {
+  User,
+  Workspace,
+  Project,
+  ProjectMember,
+  SynapseNode,
+  NodeRelation,
+  Comment,
+  CommentReaction,
+  Attachment,
+  UserPresence,
+} from '../types';
+
+export const MOCK_USERS: User[] = [
+  {
+    id: 'user-1',
+    name: 'Григорий (Вы)',
+    email: 'greg@synapse.dev',
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: 'owner',
+    created_at: 1718000000000,
+  },
+  {
+    id: 'user-2',
+    name: 'Иван Смирнов',
+    email: 'ivan@synapse.dev',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    role: 'editor',
+    created_at: 1718005000000,
+  },
+  {
+    id: 'user-3',
+    name: 'Мария Ковалёва',
+    email: 'maria@synapse.dev',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    role: 'editor',
+    created_at: 1718010000000,
+  },
+  {
+    id: 'user-4',
+    name: 'Алексей (Заказчик)',
+    email: 'alex@client.com',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    role: 'viewer',
+    created_at: 1718015000000,
+  },
+];
+
+export const MOCK_WORKSPACE: Workspace = {
+  id: 'ws-1',
+  name: 'Synapse Core Workspace',
+  owner_id: 'user-1',
+  created_at: 1718000000000,
+};
+
+export const MOCK_PROJECTS: Project[] = [
+  {
+    id: 'proj-1',
+    workspace_id: 'ws-1',
+    name: 'Synapse Engine & Canvas',
+    status: 'active',
+    type: 'software',
+    description: 'Интерактивная база знаний нового поколения с графом узлов, LWW-синхронизацией и Miro-style холстом.',
+    tags: ['react-flow', 'go-echo', 'postgresql', 'crdt-lww'],
+    created_at: 1718000000000,
+    updated_at: 1718500000000,
+  },
+  {
+    id: 'proj-2',
+    workspace_id: 'ws-1',
+    name: 'RoboArm Controller Board v2',
+    status: 'active',
+    type: 'hardware',
+    description: 'Плата управления 6-осевым манипулятором на базе STM32, силовые ключи XL4015 и операционные усилители LM358.',
+    tags: ['stm32', 'hardware', 'pcb', 'power-supply'],
+    created_at: 1718100000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'proj-3',
+    workspace_id: 'ws-1',
+    name: 'Freelance Client Portal CRM',
+    status: 'paused',
+    type: 'hybrid',
+    description: 'Клиентский портал для трекинга задач, утверждения макетов и обмена проектной документацией.',
+    tags: ['pwa', 'client-facing', 'crm'],
+    created_at: 1718200000000,
+    updated_at: 1718300000000,
+  },
+];
+
+export const MOCK_PROJECT_MEMBERS: ProjectMember[] = [
+  { project_id: 'proj-1', user_id: 'user-1', role: 'owner', invited_at: 1718000000000 },
+  { project_id: 'proj-1', user_id: 'user-2', role: 'editor', invited_by: 'user-1', invited_at: 1718005000000 },
+  { project_id: 'proj-1', user_id: 'user-3', role: 'editor', invited_by: 'user-1', invited_at: 1718010000000 },
+  { project_id: 'proj-1', user_id: 'user-4', role: 'viewer', invited_by: 'user-1', invited_at: 1718015000000 },
+  { project_id: 'proj-2', user_id: 'user-1', role: 'owner', invited_at: 1718100000000 },
+  { project_id: 'proj-2', user_id: 'user-2', role: 'editor', invited_by: 'user-1', invited_at: 1718105000000 },
+  { project_id: 'proj-3', user_id: 'user-1', role: 'owner', invited_at: 1718200000000 },
+];
+
+export const MOCK_NODES: SynapseNode[] = [
+  // PROJ-1 NODES
+  {
+    id: 'node-1',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'problem',
+    display_id: 'P-001',
+    title: 'Потеря контекста и конфликты при одновременной работе над архитектурой',
+    content: `### Описание проблемы
+Фриланс-команда сталкивается с ситуацией, когда архитектурные решения принимаются в чатах Telegram, теряются в бесконечных тредах Slack, а клиенту показываются разрозненные PDF.
+
+#### Ключевые боли:
+1. Непонятно, **почему** было выбрано то или иное техническое решение.
+2. Новые разработчики тратят до 2 недель на онбординг.
+3. Клиент не видит прогресс в понятной форме, требуя постоянных созвонов.`,
+    meta: {
+      target_audience: 'Фрилансеры, стартап-команды, внешние клиенты и заказчики',
+      value: 'Экономия до 15 часов в неделю на согласованиях и онбординге новых инженеров',
+    },
+    status: 'open',
+    visibility: 'shared',
+    tags: ['architecture', 'sync', 'workflow'],
+    canvas_x: 100,
+    canvas_y: 100,
+    created_at: 1718001000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'node-2',
+    project_id: 'proj-1',
+    author_id: 'user-2',
+    type: 'solution',
+    display_id: 'S-001',
+    title: 'Полноценный CRDT (Yjs) с P2P синхронизацией',
+    content: `### Концепция решения
+Использовать библиотеку Yjs для посимвольной синхронизации состояния всего холста и документов через WebRTC/WebSockets.
+
+#### Почему рассматривали:
+- Полное отсутствие блокировок
+- Работа в офлайне из коробки`,
+    meta: {
+      pros: [
+        'Идеальный офлайн-режим',
+        'Поддержка посимвольного совместного редактирования текста',
+        'Нет единой точки отказа при P2P',
+      ],
+      cons: [
+        'Очень тяжелый оверхед по оперативной памяти на VPS (1GB RAM)',
+        'Сложность сериализации графовых связей в CRDT-структуры',
+        'Трудности с контролем доступа и ролями (viewer vs editor)',
+      ],
+      status: 'rejected',
+      rejection_reason: 'Слишком высокое потребление RAM на VPS (1GB RAM) и избыточная сложность для базы знаний.',
+    },
+    status: 'rejected',
+    visibility: 'internal',
+    tags: ['crdt', 'yjs', 'webrtc'],
+    canvas_x: 450,
+    canvas_y: 50,
+    created_at: 1718005000000,
+    updated_at: 1718100000000,
+  },
+  {
+    id: 'node-3',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'solution',
+    display_id: 'S-002',
+    title: 'LWW (Last-Write-Wins) + Soft-Lock через WebSocket Presence',
+    content: `### Концепция решения
+Каждый узел редактируется как атомарная сущность с версионированием LWW. При открытии модалки редактирования узел блокируется soft-lock уведомлением («Мария сейчас редактирует...»).
+
+#### Преимущества для VPS:
+- Сервер на Go потребляет всего **~50MB RAM**
+- Надежный PostgreSQL 16 с JSONB для meta-полей
+- Простая модель разрешения конфликтов`,
+    meta: {
+      pros: [
+        'Минимальное потребление ресурсов (Go + pgx < 50MB)',
+        'Простая и предсказуемая ментальная модель для пользователей',
+        'Мгновенная реактивность через WebSocket presence',
+        'Легко расширять новыми типами узлов',
+      ],
+      cons: [
+        'При одновременном редактировании без сети побеждает последний сохранивший',
+      ],
+      status: 'accepted',
+    },
+    status: 'accepted',
+    visibility: 'shared',
+    tags: ['lww', 'websockets', 'go', 'architecture'],
+    canvas_x: 450,
+    canvas_y: 320,
+    created_at: 1718010000000,
+    updated_at: 1718200000000,
+  },
+  {
+    id: 'node-4',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'decision',
+    display_id: 'D-001',
+    title: 'Утвержден стек: Go + Echo + PostgreSQL 16 + React Flow + Zustand',
+    content: `### Архитектурное решение (ADR-001)
+После анализа ограничений сервера (VPS 1 core / 1GB RAM) и требований к интерактивному графу утвержден монорепозиторий со следующим разделением ответственности:
+
+- **Backend**: Go 1.23, Echo, PostgreSQL 16, pgx v5, sqlc, gorilla/websocket.
+- **Frontend**: React 18, Vite, TypeScript, React Flow, Zustand, Tailwind CSS, CodeMirror 6.
+- **Синхронизация**: WebSocket soft-lock + LWW.`,
+    meta: {
+      rationale: 'Обеспечивает работу на ультра-дешевом VPS с запасом > 500MB свободной RAM, быстрый cold start и идеальный UX на React Flow.',
+      decided_at: '2026-08-15',
+    },
+    status: 'accepted',
+    visibility: 'shared',
+    tags: ['adr', 'stack', 'backend', 'frontend'],
+    canvas_x: 820,
+    canvas_y: 220,
+    created_at: 1718020000000,
+    updated_at: 1718300000000,
+  },
+  {
+    id: 'node-5',
+    project_id: 'proj-1',
+    author_id: 'user-3',
+    type: 'feature',
+    display_id: 'F-001',
+    title: 'Интерактивный Canvas на React Flow с кастомными узлами и семантическими связями',
+    content: `### Реализация Canvas View
+Разработка бесконечного масштабируемого холста с кастомными карточками узлов для всех 13 типов знания.
+
+#### Требования:
+- Поддержка зума, перемещения (Pan/Zoom) и Drag-and-Drop
+- Цветовая дифференциация по типу узла
+- Соединение узлов стрелками с выбором семантического типа связи
+- Миникарта в правом нижнем углу`,
+    meta: {
+      priority: 'critical',
+      status: 'in_progress',
+      acceptance_criteria: [
+        { id: 'ac-1', text: 'Кастомные карточки для всех 13 типов узлов с иконками и цветами', done: true },
+        { id: 'ac-2', text: 'Сохранение координат canvas_x и canvas_y в хранилище при перетаскивании', done: true },
+        { id: 'ac-3', text: 'Стрелки с подписями типов связей и стрелочными наконечниками', done: true },
+        { id: 'ac-4', text: 'Клик на узел открывает Detail Drawer / View', done: true },
+        { id: 'ac-5', text: 'Миникарта с интерактивным просмотром области видимости', done: true },
+      ],
+    },
+    status: 'in_progress',
+    visibility: 'shared',
+    tags: ['canvas', 'react-flow', 'ui', 'graph'],
+    canvas_x: 1200,
+    canvas_y: 80,
+    created_at: 1718030000000,
+    updated_at: 1718500000000,
+  },
+  {
+    id: 'node-6',
+    project_id: 'proj-1',
+    author_id: 'user-2',
+    type: 'feature',
+    display_id: 'F-002',
+    title: 'Real-time индикация присутствия (Presence) и Soft Lock узлов',
+    content: `### Требования к Presence & Locking
+Пользователи должны видеть, кто в данный момент находится в проекте, какой узел просматривает и какой редактирует.
+
+#### Поведение:
+1. Аватары активных участников в верхнем баре.
+2. При открытии редактирования узел подсвечивается плашкой: «Иван редактирует...».
+3. Другие участники видят режим только для чтения до снятия блокировки.`,
+    meta: {
+      priority: 'high',
+      status: 'done',
+      acceptance_criteria: [
+        { id: 'ac-21', text: 'WebSocket броадкаст событий user_online и node_locked', done: true },
+        { id: 'ac-22', text: 'Отображение бейджа с аватаром на карточке узла на Canvas', done: true },
+        { id: 'ac-23', text: 'Таймаут автоматического снятия soft-lock через 60 сек неактивности', done: true },
+      ],
+    },
+    status: 'done',
+    visibility: 'shared',
+    tags: ['presence', 'collaboration', 'lock'],
+    canvas_x: 1200,
+    canvas_y: 380,
+    created_at: 1718040000000,
+    updated_at: 1718450000000,
+  },
+  {
+    id: 'node-7',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'component',
+    display_id: 'C-001',
+    title: 'Canvas Graph Engine (React Flow + Zustand Store)',
+    content: `### Компонент холста
+Модуль фронтенда, инкапсулирующий работу с React Flow:
+- Управление нодами и связями
+- Батчинг обновления координат
+- Селекторы TanStack Query + Zustand для мгновенного рендера`,
+    meta: {
+      tech_stack: ['@xyflow/react', 'zustand', 'lucide-react', 'tailwind-merge'],
+      responsibilities: [
+        'Отрисовка 60 FPS холста с сотнями узлов',
+        'Трансляция координат узлов в глобальный стейт',
+        'Интерактивное создание связей через Drag Handle',
+      ],
+    },
+    status: 'active',
+    visibility: 'internal',
+    tags: ['component', 'frontend', 'graph'],
+    canvas_x: 1580,
+    canvas_y: 60,
+    created_at: 1718050000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'node-8',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'component',
+    display_id: 'C-002',
+    title: 'WebSocket & API Gateway (Go Echo + pgx v5)',
+    content: `### Бэкенд шлюз
+Единый бинарник на Go с роутером Echo, обслуживающий REST API и постоянные WebSocket соединения с клиентами.`,
+    meta: {
+      tech_stack: ['Go 1.23', 'Echo v4', 'pgx/v5', 'gorilla/websocket', 'sqlc'],
+      responsibilities: [
+        'JWT аутентификация и проверка ролей (owner/editor/viewer)',
+        'Шлюз событий WebSocket (node_created, node_updated, node_locked)',
+        'CRUD операции над узлами, связями и комментариями',
+      ],
+    },
+    status: 'active',
+    visibility: 'internal',
+    tags: ['backend', 'go', 'echo', 'api'],
+    canvas_x: 1580,
+    canvas_y: 360,
+    created_at: 1718060000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'node-9',
+    project_id: 'proj-1',
+    author_id: 'user-3',
+    type: 'risk',
+    display_id: 'R-001',
+    title: 'Проседание FPS на мобильных устройствах при графах > 500 узлов',
+    content: `### Описание риска
+На мобильных браузерах и слабых Android устройствах тяжелые SVG-связи и сложные DOM-деревья узлов могут снижать частоту кадров ниже 30 FPS.`,
+    meta: {
+      probability: 'medium',
+      impact: 'high',
+      mitigation: 'Включение viewport virtualisation (только видимые узлы в DOM) и возможность переключения в режим Sections View.',
+      status: 'mitigated',
+    },
+    status: 'mitigated',
+    visibility: 'shared',
+    tags: ['performance', 'mobile', 'react-flow'],
+    canvas_x: 820,
+    canvas_y: -60,
+    created_at: 1718070000000,
+    updated_at: 1718350000000,
+  },
+  {
+    id: 'node-10',
+    project_id: 'proj-1',
+    author_id: 'user-2',
+    type: 'test',
+    display_id: 'T-001',
+    title: 'Тест одновременного редактирования и разрешения LWW конфликта',
+    content: `### Сценарий теста
+1. Пользователь А и Пользователь Б открывают узел D-001.
+2. Пользователь А вносит правки в заголовок и сохраняет.
+3. Проверяется отправка WS события и обновление стейта у Пользователя Б.`,
+    meta: {
+      expected: 'Пользователь Б видит обновленные данные без перезагрузки страницы; soft lock снимается корректно.',
+      actual: 'Все события доставлены за 14ms, конфликт разрешен в пользу последней метки времени.',
+      status: 'pass',
+      tested_at: '2026-08-20',
+    },
+    status: 'pass',
+    visibility: 'internal',
+    tags: ['test', 'e2e', 'websocket'],
+    canvas_x: 1200,
+    canvas_y: 650,
+    created_at: 1718080000000,
+    updated_at: 1718420000000,
+  },
+  {
+    id: 'node-11',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'benchmark',
+    display_id: 'B-001',
+    title: 'Замер задержки WebSocket броадкаста (100 клиентов)',
+    content: `### Тест масштабируемости
+Измерение round-trip задержки доставки пакета события изменения узла 100 подключенным клиентам на 1-ядерном сервере.`,
+    meta: {
+      model: 'Go Echo WebSocket Hub',
+      version: 'v1.0.4',
+      metric_key: 'broadcast_latency_ms',
+      metric_value: 12.4,
+      unit: 'ms',
+      hardware: 'VPS 1 vCPU / 1GB RAM / Ubuntu 24.04',
+      dataset: '100 concurrent WS subscribers',
+    },
+    status: 'pass',
+    visibility: 'shared',
+    tags: ['benchmark', 'performance', 'latency'],
+    canvas_x: 1580,
+    canvas_y: 620,
+    created_at: 1718090000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'node-12',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'benchmark',
+    display_id: 'B-002',
+    title: 'Замер частоты кадров Canvas при 500 нодах',
+    content: `### Тест рендеринга React Flow
+Замер средней частоты кадров при зуме и панорамировании 500 узлов со связями на Chrome Desktop.`,
+    meta: {
+      model: 'Synapse Canvas Virtualizer',
+      version: 'v2.1',
+      metric_key: 'canvas_fps',
+      metric_value: 58.5,
+      unit: 'FPS',
+      hardware: 'Apple M2 / Chrome 128',
+      dataset: '500 nodes with 750 edges',
+    },
+    status: 'pass',
+    visibility: 'shared',
+    tags: ['benchmark', 'fps', 'canvas'],
+    canvas_x: 1950,
+    canvas_y: 80,
+    created_at: 1718095000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'node-13',
+    project_id: 'proj-1',
+    author_id: 'user-3',
+    type: 'note',
+    display_id: 'N-001',
+    title: 'Идеи по автоматической раскладке графа (Auto-Layout)',
+    content: `### Заметки по алгоритмам раскладки
+- Изучить Dagre для автоматической иерархической раскладки.
+- ELKjs (Eclipse Layout Kernel) дает очень красивые деревья связей.
+- Добавить кнопку «Выровнять граф» в тулбар Canvas.`,
+    meta: {},
+    status: 'draft',
+    visibility: 'internal',
+    tags: ['idea', 'layout', 'dagre'],
+    canvas_x: 450,
+    canvas_y: 600,
+    created_at: 1718100000000,
+    updated_at: 1718300000000,
+  },
+  {
+    id: 'node-14',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'lesson',
+    display_id: 'L-001',
+    title: 'Отказ от монструозных ORM в пользу sqlc ускорил сборку и снизил RAM в 3 раза',
+    content: `### Извлеченный урок
+Изначально рассматривался GORM, однако его рефлексия и неявные аллокации памяти создавали пики потребления до 200MB.
+
+Переход на **sqlc + pgx/v5** дал строгую типизацию, чистый SQL и постоянное потребление памяти всего 28MB.`,
+    meta: {
+      problem_encountered: 'Высокое потребление памяти и непредсказуемые медленные N+1 запросы в GORM.',
+      root_cause: 'Рефлексия и отсутствие статической компиляции SQL-запросов.',
+      solution_applied: 'Генерация типобезопасного Go-кода из чистых SQL-файлов через sqlc.',
+    },
+    status: 'published',
+    visibility: 'shared',
+    tags: ['lesson', 'go', 'sqlc', 'performance'],
+    canvas_x: 100,
+    canvas_y: 450,
+    created_at: 1718110000000,
+    updated_at: 1718350000000,
+  },
+  {
+    id: 'node-15',
+    project_id: 'proj-1',
+    author_id: 'user-3',
+    type: 'link',
+    display_id: 'K-001',
+    title: 'Miro Board: Первоначальный вайрфрейм и CJM базы знаний',
+    content: `Интерактивная доска со схемами экранов, картой переходов и первичным описанием ролей пользователей.`,
+    meta: {
+      url: 'https://miro.com/app/board/uXjVO123456=/',
+      source: 'miro',
+      preview_url: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800&auto=format&fit=crop&q=80',
+    },
+    status: 'active',
+    visibility: 'shared',
+    tags: ['miro', 'design', 'wireframe'],
+    canvas_x: 1200,
+    canvas_y: -180,
+    created_at: 1718120000000,
+    updated_at: 1718300000000,
+  },
+  {
+    id: 'node-16',
+    project_id: 'proj-1',
+    author_id: 'user-1',
+    type: 'deployment',
+    display_id: 'M-001',
+    title: 'Релиз Synapse v1.0 на VPS с Nginx Reverse Proxy и Let\'s Encrypt SSL',
+    content: `### Шаги развертывания
+1. Собрать статику frontend в Vite: npm run build
+2. Скомпилировать Go бинарник: CGO_ENABLED=0 go build -ldflags="-s -w" -o synapse-server
+3. Запустить Docker Compose: PostgreSQL 16 + Synapse binary
+4. Проверить доступность WebSocket по SSL: wss://synapse.dev/ws`,
+    meta: {
+      stage: 'Production',
+      instructions: 'docker compose up -d --build && nginx -s reload',
+      status: 'pending',
+    },
+    status: 'pending',
+    visibility: 'shared',
+    tags: ['devops', 'deployment', 'docker', 'nginx'],
+    canvas_x: 1950,
+    canvas_y: 380,
+    created_at: 1718130000000,
+    updated_at: 1718400000000,
+  },
+  {
+    id: 'node-17',
+    project_id: 'proj-1',
+    author_id: 'user-2',
+    type: 'log',
+    display_id: 'G-001',
+    title: 'Рефакторинг схемы базы данных и оптимизация индексов PostgreSQL',
+    content: `Успешно добавили GIN индексы для поиска FTS5 и оптимизировали внешние ключи relations. Затрачено 180 минут.`,
+    meta: {
+      duration_min: 180,
+      category: 'Backend Refactoring',
+    },
+    status: 'completed',
+    visibility: 'internal',
+    tags: ['log', 'timesheet', 'postgres'],
+    canvas_x: 820,
+    canvas_y: 540,
+    created_at: 1718140000000,
+    updated_at: 1718400000000,
+  },
+
+  // PROJ-2 NODES (Hardware RoboArm)
+  {
+    id: 'node-h1',
+    project_id: 'proj-2',
+    author_id: 'user-1',
+    type: 'problem',
+    display_id: 'P-101',
+    title: 'Перегрев стабилизаторов питания при токах выше 4А на сервоприводах',
+    content: 'Линейные стабилизаторы LDO рассеивают слишком много тепла и уходят в термозащиту при пиковых нагрузках манипулятора.',
+    meta: {
+      target_audience: 'Инженеры-схемотехники, операторы робота',
+      value: 'Устранение риска выхода платы из строя и пожаробезопасность',
+    },
+    status: 'open',
+    visibility: 'shared',
+    tags: ['power', 'thermal', 'hardware'],
+    canvas_x: 100,
+    canvas_y: 100,
+    created_at: 1718105000000,
+    updated_at: 1718300000000,
+  },
+  {
+    id: 'node-h2',
+    project_id: 'proj-2',
+    author_id: 'user-1',
+    type: 'solution',
+    display_id: 'S-101',
+    title: 'Импульсный DC-DC преобразователь на базе XL4015 с токовым датчиком на LM358',
+    content: 'Замена линейных стабилизаторов на эффективный DC-DC понижающий модуль XL4015 с КПД до 96% и контролем тока через сдвоенный ОУ LM358.',
+    meta: {
+      pros: ['КПД до 96%', 'Токи до 5A без массивного радиатора', 'Регулируемое токовое ограничение'],
+      cons: ['Высокочастотные пульсации (требуется LC-фильтр)'],
+      status: 'accepted',
+    },
+    status: 'accepted',
+    visibility: 'shared',
+    tags: ['xl4015', 'lm358', 'dc-dc'],
+    canvas_x: 480,
+    canvas_y: 100,
+    created_at: 1718110000000,
+    updated_at: 1718300000000,
+  },
+  {
+    id: 'node-h3',
+    project_id: 'proj-2',
+    author_id: 'user-1',
+    type: 'component',
+    display_id: 'C-101',
+    title: 'Силовой модуль XL4015 DC-DC Buck Converter',
+    content: 'Понижающий импульсный регулятор напряжения с частотой 180 кГц.',
+    meta: {
+      tech_stack: ['XL4015 IC', 'Schottky SS54', '47uH Choke', 'Low-ESR Caps'],
+      responsibilities: ['Преобразование 24V в стабильные 5.5V для 6 сервоприводов'],
+    },
+    status: 'active',
+    visibility: 'shared',
+    tags: ['component', 'power'],
+    canvas_x: 850,
+    canvas_y: 50,
+    created_at: 1718115000000,
+    updated_at: 1718300000000,
+  },
+  {
+    id: 'node-h4',
+    project_id: 'proj-2',
+    author_id: 'user-1',
+    type: 'component',
+    display_id: 'C-102',
+    title: 'Усилитель шунта обратной связи по току (LM358)',
+    content: 'Операционный усилитель для измерения падения напряжения на шунте 0.05 Ом и защиты от перегрузки.',
+    meta: {
+      tech_stack: ['LM358 Dual OpAmp', 'Shunt 50mOhm', 'RC Filter'],
+      responsibilities: ['Усиление сигнала датчика тока для АЦП микроконтроллера STM32'],
+    },
+    status: 'active',
+    visibility: 'shared',
+    tags: ['component', 'analog'],
+    canvas_x: 850,
+    canvas_y: 280,
+    created_at: 1718120000000,
+    updated_at: 1718300000000,
+  },
+];
+
+export const MOCK_RELATIONS: NodeRelation[] = [
+  // PROJ-1 RELATIONS
+  {
+    id: 'rel-1',
+    from_node_id: 'node-2',
+    to_node_id: 'node-1',
+    type: 'derives_from',
+    note: 'Концепт CRDT был предложен для решения проблемы синхронизации',
+    author_id: 'user-2',
+    created_at: 1718005500000,
+  },
+  {
+    id: 'rel-2',
+    from_node_id: 'node-3',
+    to_node_id: 'node-1',
+    type: 'derives_from',
+    note: 'LWW + Soft lock вытекает из проблемы рассинхронизации',
+    author_id: 'user-1',
+    created_at: 1718010500000,
+  },
+  {
+    id: 'rel-3',
+    from_node_id: 'node-4',
+    to_node_id: 'node-3',
+    type: 'supersedes',
+    note: 'ADR-001 финализирует выбор решения LWW перед остальными',
+    author_id: 'user-1',
+    created_at: 1718020500000,
+  },
+  {
+    id: 'rel-4',
+    from_node_id: 'node-5',
+    to_node_id: 'node-4',
+    type: 'implements',
+    note: 'Canvas на React Flow реализует утвержденный UI стек',
+    author_id: 'user-3',
+    created_at: 1718030500000,
+  },
+  {
+    id: 'rel-5',
+    from_node_id: 'node-6',
+    to_node_id: 'node-4',
+    type: 'implements',
+    note: 'Presence реализует концепт Soft Lock из архитектурного решения',
+    author_id: 'user-2',
+    created_at: 1718040500000,
+  },
+  {
+    id: 'rel-6',
+    from_node_id: 'node-7',
+    to_node_id: 'node-5',
+    type: 'implements',
+    note: 'Модуль Canvas Graph Engine обеспечивает работу фичи Canvas',
+    author_id: 'user-1',
+    created_at: 1718050500000,
+  },
+  {
+    id: 'rel-7',
+    from_node_id: 'node-7',
+    to_node_id: 'node-8',
+    type: 'depends_on',
+    note: 'Canvas фронтенда зависит от WebSocket шлюза бэкенда',
+    author_id: 'user-1',
+    created_at: 1718060500000,
+  },
+  {
+    id: 'rel-8',
+    from_node_id: 'node-9',
+    to_node_id: 'node-5',
+    type: 'contradicts',
+    note: 'Риск производительности угрожает полноценной работе Canvas',
+    author_id: 'user-3',
+    created_at: 1718070500000,
+  },
+  {
+    id: 'rel-9',
+    from_node_id: 'node-10',
+    to_node_id: 'node-6',
+    type: 'validates',
+    note: 'Тест одновременного редактирования валидирует работу Presence и Soft Lock',
+    author_id: 'user-2',
+    created_at: 1718080500000,
+  },
+  {
+    id: 'rel-10',
+    from_node_id: 'node-11',
+    to_node_id: 'node-8',
+    type: 'validates',
+    note: 'Бенчмарк задержки подтверждает производительность Go Echo Gateway',
+    author_id: 'user-1',
+    created_at: 1718090500000,
+  },
+  {
+    id: 'rel-11',
+    from_node_id: 'node-12',
+    to_node_id: 'node-7',
+    type: 'validates',
+    note: 'Бенчмарк 60 FPS подтверждает готовность Canvas к большим графам',
+    author_id: 'user-1',
+    created_at: 1718095500000,
+  },
+  {
+    id: 'rel-12',
+    from_node_id: 'node-14',
+    to_node_id: 'node-1',
+    type: 'caused_by',
+    note: 'Урок по оптимизации БД вызван первичными проблемами производительности',
+    author_id: 'user-1',
+    created_at: 1718110500000,
+  },
+  {
+    id: 'rel-13',
+    from_node_id: 'node-5',
+    to_node_id: 'node-15',
+    type: 'references',
+    note: 'Фича Canvas опирается на вайрфреймы в Miro',
+    author_id: 'user-3',
+    created_at: 1718120500000,
+  },
+  {
+    id: 'rel-14',
+    from_node_id: 'node-16',
+    to_node_id: 'node-4',
+    type: 'implements',
+    note: 'Деплой разворачивает стек, утвержденный в ADR-001',
+    author_id: 'user-1',
+    created_at: 1718130500000,
+  },
+
+  // PROJ-2 RELATIONS (Hardware)
+  {
+    id: 'rel-h1',
+    from_node_id: 'node-h2',
+    to_node_id: 'node-h1',
+    type: 'derives_from',
+    note: 'Решение на XL4015 вытекает из проблемы перегрева LDO',
+    author_id: 'user-1',
+    created_at: 1718110500000,
+  },
+  {
+    id: 'rel-h2',
+    from_node_id: 'node-h3',
+    to_node_id: 'node-h4',
+    type: 'depends_on',
+    note: 'Модуль питания XL4015 зависит от обратной связи с усилителя LM358',
+    author_id: 'user-1',
+    created_at: 1718120500000,
+  },
+];
+
+export const MOCK_COMMENTS: Comment[] = [
+  {
+    id: 'comm-1',
+    node_id: 'node-4',
+    author_id: 'user-2',
+    reply_to_id: null,
+    content: 'Отличный выбор! Особенно радует pgx v5 с пулом коннектов и поддержка sqlc для строгой типизации.',
+    created_at: 1718025000000,
+  },
+  {
+    id: 'comm-2',
+    node_id: 'node-4',
+    author_id: 'user-1',
+    reply_to_id: 'comm-1',
+    content: 'Да, в тестах потребление памяти сервера на Go не превысило 48MB даже при 200 одновременных WebSocket соединениях.',
+    created_at: 1718026000000,
+  },
+  {
+    id: 'comm-3',
+    node_id: 'node-1',
+    author_id: 'user-4',
+    reply_to_id: null,
+    content: 'Как клиент, я очень жду удобный веб-интерфейс, где смогу сразу видеть статус готовности фич и причины архитектурных решений!',
+    created_at: 1718018000000,
+  },
+  {
+    id: 'comm-4',
+    node_id: 'node-5',
+    author_id: 'user-3',
+    reply_to_id: null,
+    content: 'Кастомные карточки для React Flow уже почти готовы, добавила цветовую схему из дизайн-токенов.',
+    created_at: 1718035000000,
+  },
+];
+
+export const MOCK_REACTIONS: CommentReaction[] = [
+  { comment_id: 'comm-1', user_id: 'user-1', emoji: '👍' },
+  { comment_id: 'comm-1', user_id: 'user-3', emoji: '❤️' },
+  { comment_id: 'comm-2', user_id: 'user-2', emoji: '✅' },
+  { comment_id: 'comm-3', user_id: 'user-1', emoji: '❤️' },
+  { comment_id: 'comm-3', user_id: 'user-2', emoji: '👍' },
+];
+
+export const MOCK_ATTACHMENTS: Attachment[] = [
+  {
+    id: 'att-1',
+    node_id: 'node-5',
+    author_id: 'user-3',
+    type: 'image',
+    filename: 'canvas-mockup-dark.png',
+    storage_path: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
+    mime_type: 'image/png',
+    size_bytes: 428000,
+    created_at: 1718032000000,
+  },
+  {
+    id: 'att-2',
+    node_id: 'node-4',
+    author_id: 'user-1',
+    type: 'file',
+    filename: 'architecture-benchmark-report.pdf',
+    storage_path: '/uploads/architecture-benchmark-report.pdf',
+    mime_type: 'application/pdf',
+    size_bytes: 1250000,
+    created_at: 1718022000000,
+  },
+  {
+    id: 'att-3',
+    node_id: 'node-15',
+    author_id: 'user-3',
+    type: 'embed',
+    filename: 'Miro Board Synapse Flow',
+    embed_url: 'https://miro.com/app/board/uXjVO123456=/',
+    created_at: 1718121000000,
+  },
+];
+
+export const MOCK_PRESENCE: UserPresence[] = [
+  {
+    user_id: 'user-2',
+    name: 'Иван Смирнов',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    current_node_id: 'node-5',
+    is_editing: false,
+    last_seen: Date.now(),
+  },
+  {
+    user_id: 'user-3',
+    name: 'Мария Ковалёва',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    current_node_id: 'node-3',
+    is_editing: true,
+    last_seen: Date.now(),
+  },
+];

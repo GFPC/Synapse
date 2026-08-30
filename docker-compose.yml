@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: synapse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-synapse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapse_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-synapse}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.api
+    container_name: synapse-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgres://${POSTGRES_USER:-synapse}:${POSTGRES_PASSWORD:-synapse_pass}@postgres:5432/${POSTGRES_DB:-synapse}?sslmode=disable
+      - JWT_SECRET=${JWT_SECRET:-synapse_super_secret_production_key_32bytes!}
+      - UPLOAD_DIR=/data/uploads
+      - MAX_FILE_SIZE_MB=50
+      - RATE_LIMIT_RPS=100
+      - RATE_LIMIT_BURST=50
+    volumes:
+      - uploads_data:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.web
+    container_name: synapse-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  uploads_data:
