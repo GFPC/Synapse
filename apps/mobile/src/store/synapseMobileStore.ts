@@ -59,7 +59,10 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => {
           email: 'architect@synapse.local',
           password: 'password123',
         });
-        const loginData = loginRes.data?.data || loginRes.data;
+        const loginData = loginRes?.data?.tokens
+          ? loginRes.data
+          : (loginRes?.data as any)?.data || loginRes?.data;
+
         if (loginData?.tokens) {
           const accessToken = loginData.tokens.access_token;
           mobileApiClient.setTokens(accessToken, loginData.tokens.refresh_token);
@@ -82,7 +85,6 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => {
           : raw?.data || raw?.projects || [];
         set({ projects });
         if (projects.length > 0 && !get().activeProject) {
-          // Find first project with nodes
           await get().selectProject(projects[0].id);
         }
       } catch (e) {
@@ -96,7 +98,7 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => {
       await get().fetchNodesAndRelations(projectId);
 
       // Connect to Live WS
-      const token = (mobileApiClient as any).accessToken;
+      const token = mobileApiClient.getAccessToken();
       if (token) {
         synapseWS.connect(token, projectId);
         synapseWS.subscribe((event: WSEvent) => {
@@ -123,37 +125,40 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => {
         const raw = res.data;
         const nodes: SynapseNode[] = Array.isArray(raw)
           ? raw
-          : raw?.data || raw?.nodes || [];
+          : Array.isArray(raw?.data)
+          ? raw.data
+          : raw?.nodes || [];
 
         synapseCore.updateSpatialIndex(nodes);
 
-        // Fetch relations for nodes
-        const allRelations: NodeRelation[] = [];
-        for (const node of nodes.slice(0, 15)) {
-          try {
-            const relRes = await mobileApiClient.get<any>(`/api/nodes/${node.id}/relations`);
-            const relData = relRes.data?.data || relRes.data || [];
-            if (Array.isArray(relData)) {
-              allRelations.push(...relData);
-            }
-          } catch {
-            // Ignore per-node relation errors
-          }
-        }
-
-        // Deduplicate relations
-        const uniqueRelations = Array.from(
-          new Map(allRelations.map((r) => [r.id, r])).values()
-        );
-
+        // Immediately update nodes and clear loading so canvas renders instantly
         set({
           nodes,
-          relations: uniqueRelations,
+          isLoading: false,
           visibleNodeIds: nodes.map((n: SynapseNode) => n.id),
         });
+
+        // Fetch relations in parallel in background
+        if (nodes.length > 0) {
+          const promises = nodes.slice(0, 20).map((node) =>
+            mobileApiClient
+              .get<any>(`/api/nodes/${node.id}/relations`)
+              .then((relRes) => {
+                const d = relRes?.data?.data || relRes?.data;
+                return Array.isArray(d) ? d : [];
+              })
+              .catch(() => [])
+          );
+
+          const results = await Promise.all(promises);
+          const allRelations = results.flat();
+          const uniqueRelations = Array.from(
+            new Map(allRelations.map((r) => [r.id, r])).values()
+          );
+          set({ relations: uniqueRelations });
+        }
       } catch (e) {
         console.warn('Failed to fetch nodes', e);
-      } finally {
         set({ isLoading: false });
       }
     },
