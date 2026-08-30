@@ -237,7 +237,8 @@ export const ArchitectureSectionsScreen: React.FC = () => {
                         node={node}
                         relations={relations}
                         allNodes={nodes}
-                        onPress={() => selectNode(node.id)}
+                        onPress={() => selectNode(node.id, 'view')}
+                        onDoublePress={() => selectNode(node.id, 'edit')}
                         onAddRelation={() => openCreateRelationModal(node)}
                       />
                     ))}

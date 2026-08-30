@@ -43,6 +43,7 @@ interface SynapseMobileState {
   relations: NodeRelation[];
   commentsMap: Record<string, Comment[]>;
   selectedNodeId: string | null;
+  nodeModalMode: 'view' | 'edit';
 
   // Filters & Sorting
   activeTypeFilter: NodeType | 'all';
@@ -91,7 +92,7 @@ interface SynapseMobileState {
   clearLocalCache: () => Promise<void>;
 
   // UI state setters
-  selectNode: (nodeId: string | null) => void;
+  selectNode: (nodeId: string | null, mode?: 'view' | 'edit') => void;
   setTypeFilter: (filter: NodeType | 'all') => void;
   setTagFilter: (tag: string | null) => void;
   setSorting: (field: SortField, order?: SortOrder) => void;
@@ -142,6 +143,7 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
   relations: [],
   commentsMap: {},
   selectedNodeId: null,
+  nodeModalMode: 'view',
 
   activeTypeFilter: 'all',
   activeTagFilter: null,
@@ -438,7 +440,8 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
     set({ commentsMap: {} });
   },
 
-  selectNode: (nodeId: string | null) => set({ selectedNodeId: nodeId }),
+  selectNode: (nodeId: string | null, mode?: 'view' | 'edit') =>
+    set({ selectedNodeId: nodeId, nodeModalMode: mode || 'view' }),
   setTypeFilter: (filter: NodeType | 'all') => set({ activeTypeFilter: filter }),
   setTagFilter: (tag: string | null) => set({ activeTagFilter: tag }),
   setSorting: (field: SortField, order?: SortOrder) =>

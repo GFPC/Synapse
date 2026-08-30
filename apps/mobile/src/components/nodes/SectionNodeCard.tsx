@@ -9,6 +9,7 @@ interface Props {
   relations: NodeRelation[];
   allNodes: SynapseNode[];
   onPress: () => void;
+  onDoublePress?: () => void;
   onAddRelation?: () => void;
 }
 
@@ -17,6 +18,7 @@ export const SectionNodeCard: React.FC<Props> = ({
   relations,
   allNodes,
   onPress,
+  onDoublePress,
   onAddRelation,
 }) => {
   const conf = NODE_TYPE_CONFIG[node.type as NodeType] || NODE_TYPE_CONFIG.note;
@@ -52,7 +54,7 @@ export const SectionNodeCard: React.FC<Props> = ({
       style={styles.card}
       activeOpacity={0.75}
       onPress={onPress}
-      onLongPress={onAddRelation}
+      onLongPress={onDoublePress || onAddRelation}
     >
       {/* Top Meta Line: ID, Type Label, Status */}
       <View style={styles.topRow}>

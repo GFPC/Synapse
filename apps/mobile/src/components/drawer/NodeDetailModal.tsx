@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -72,6 +72,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
     nodes,
     relations,
     commentsMap,
+    nodeModalMode,
     fetchComments,
     addComment,
     toggleReaction,
@@ -100,10 +101,23 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
+  // Double tap detection inside modal
+  const lastTapRef = useRef<number>(0);
+  const handleDoubleTapToEdit = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 350;
+    if (lastTapRef.current && now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      lastTapRef.current = 0;
+      setIsEditing(true);
+    } else {
+      lastTapRef.current = now;
+    }
+  };
+
   useEffect(() => {
     if (visible && node) {
       fetchComments(node.id);
-      setIsEditing(false);
+      setIsEditing(nodeModalMode === 'edit');
       setEditTitle(node.title || '');
       setEditContent(node.content || '');
       setEditType((node.type as NodeType) || 'component');
@@ -113,7 +127,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
       setEditThroughput(node.meta?.throughput || node.meta?.ops_sec || '');
       setEditSlo(node.meta?.slo_target || '');
     }
-  }, [visible, node?.id]);
+  }, [visible, node?.id, nodeModalMode]);
 
   const conf = node
     ? NODE_TYPE_CONFIG[node.type as NodeType] || NODE_TYPE_CONFIG.note
@@ -226,23 +240,38 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
               </View>
 
               <View style={styles.headerRight}>
-                <TouchableOpacity
-                  style={[styles.actionHeaderBtn, isEditing && styles.actionHeaderBtnActive]}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  onPress={() => setIsEditing(!isEditing)}
-                >
-                  <Text style={[styles.actionHeaderBtnText, isEditing && styles.actionHeaderBtnTextActive]}>
-                    {isEditing ? 'Cancel' : 'Edit'}
-                  </Text>
-                </TouchableOpacity>
+                {isEditing ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.cancelHeaderBtn}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      onPress={() => setIsEditing(false)}
+                    >
+                      <Text style={styles.cancelHeaderBtnText}>Cancel</Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.closeBtn}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  onPress={onClose}
-                >
-                  <Text style={styles.closeBtnText}>✕</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.saveHeaderBtn, (!editTitle.trim() || isSaving) && styles.btnDisabled]}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      onPress={handleSaveEdit}
+                      disabled={!editTitle.trim() || isSaving}
+                    >
+                      {isSaving ? (
+                        <ActivityIndicator size="small" color="#000" />
+                      ) : (
+                        <Text style={styles.saveHeaderBtnText}>Done</Text>
+                      )}
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.closeBtn}
+                    hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                    onPress={onClose}
+                  >
+                    <Text style={styles.closeBtnText}>✕</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
@@ -449,19 +478,35 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                   {/* TAB 1: OVERVIEW */}
                   {activeTab === 'overview' && (
                     <View style={styles.tabSection}>
-                      <Text style={styles.title}>{node.title}</Text>
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={handleDoubleTapToEdit}
+                      >
+                        <Text style={styles.title}>{node.title}</Text>
+                      </TouchableOpacity>
 
                       {isBenchmark && <BenchmarkMeter meta={node.meta} />}
 
-                      <View style={styles.cardBox}>
-                        <Text style={styles.boxTitle}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={handleDoubleTapToEdit}
+                        style={styles.cardBox}
+                      >
+                        <View style={styles.boxHeaderRow}>
+                          <Text style={styles.boxTitle}>DESCRIPTION & ARCHITECTURAL CONTEXT</Text>
+                          <Text style={styles.doubleTapHint}>DOUBLE-TAP TO EDIT</Text>
+                        </View>
                         <Text style={styles.contentText}>
                           {node.content || 'No architectural description provided for this node.'}
                         </Text>
-                      </View>
+                      </TouchableOpacity>
 
                       {/* Tags Section */}
-                      <View style={styles.cardBox}>
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={handleDoubleTapToEdit}
+                        style={styles.cardBox}
+                      >
                         <Text style={styles.boxTitle}>SYSTEM TAGS</Text>
                         <View style={styles.tagsWrap}>
                           {node.tags && node.tags.length > 0 ? (
@@ -474,7 +519,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                             <Text style={styles.noDataText}>No tags assigned</Text>
                           )}
                         </View>
-                      </View>
+                      </TouchableOpacity>
 
                       {/* Author & Timestamps */}
                       <View style={styles.metaRow}>
@@ -485,15 +530,6 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                           Updated: {formatDate(node.updated_at)}
                         </Text>
                       </View>
-
-                      {/* Primary Edit Action Button */}
-                      <TouchableOpacity
-                        style={styles.overviewEditBtn}
-                        activeOpacity={0.75}
-                        onPress={() => setIsEditing(true)}
-                      >
-                        <Text style={styles.overviewEditBtnText}>✏️ Edit Node Specification</Text>
-                      </TouchableOpacity>
                     </View>
                   )}
 
@@ -711,40 +747,27 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     zIndex: 10,
   },
-  overviewEditBtn: {
-    backgroundColor: THEME.surface2,
-    borderWidth: 1,
-    borderColor: THEME.border2,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  overviewEditBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: THEME.accentBright,
-  },
-  actionHeaderBtn: {
-    backgroundColor: THEME.surface2,
+  cancelHeaderBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
-    borderWidth: 1,
-    borderColor: THEME.border,
+    backgroundColor: THEME.surface2,
   },
-  actionHeaderBtnActive: {
-    backgroundColor: THEME.surface3,
-    borderColor: THEME.border2,
-  },
-  actionHeaderBtnText: {
+  cancelHeaderBtnText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: THEME.accentBright,
-  },
-  actionHeaderBtnTextActive: {
     color: THEME.text3,
+    fontWeight: '600',
+  },
+  saveHeaderBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: THEME.accent,
+  },
+  saveHeaderBtnText: {
+    fontSize: 11,
+    color: '#000',
+    fontWeight: '700',
   },
   typeBadge: {
     width: 32,
@@ -964,12 +987,25 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
   },
+  boxHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   boxTitle: {
     fontFamily: 'monospace',
     fontSize: 9.5,
     fontWeight: '700',
     color: THEME.text4,
     letterSpacing: 0.5,
+  },
+  doubleTapHint: {
+    fontFamily: 'monospace',
+    fontSize: 8,
+    fontWeight: '700',
+    color: THEME.accentBright,
+    letterSpacing: 0.4,
+    opacity: 0.7,
   },
   contentText: {
     fontSize: 12.5,
