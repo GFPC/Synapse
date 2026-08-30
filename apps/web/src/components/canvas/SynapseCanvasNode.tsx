@@ -117,6 +117,13 @@ export const SynapseCanvasNode = memo(({ data, selected }: NodeProps) => {
           {node.title}
         </h4>
 
+        {/* Content Preview Snippet */}
+        {node.content ? (
+          <p className="mt-1.5 text-xs text-text-muted line-clamp-2 leading-relaxed font-normal">
+            {node.content}
+          </p>
+        ) : null}
+
         {/* Dynamic type snippet preview */}
         {node.type === 'feature' && meta && (
           <div className="mt-2 flex items-center gap-2 text-[11px] text-text-muted">
