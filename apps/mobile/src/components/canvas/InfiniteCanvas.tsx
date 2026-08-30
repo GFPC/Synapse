@@ -4,16 +4,18 @@ import {
   StyleSheet,
   PanResponder,
   Dimensions,
-  Animated,
 } from 'react-native';
-import { SynapseNode } from '../../types';
+import { SynapseNode, NodeRelation } from '../../types';
 import { MobileNodeCard } from '../nodes/MobileNodeCard';
+import { THEME } from '../../theme/tokens';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface Props {
   nodes: SynapseNode[];
+  relations?: NodeRelation[];
   selectedNodeId: string | null;
+  scale?: number;
   onSelectNode: (nodeId: string) => void;
   onNodeMove: (nodeId: string, x: number, y: number) => void;
 }
@@ -21,12 +23,12 @@ interface Props {
 export const InfiniteCanvas: React.FC<Props> = ({
   nodes,
   selectedNodeId,
+  scale = 1.0,
   onSelectNode,
 }) => {
   const [pan, setPan] = useState({ x: SCREEN_WIDTH / 2, y: 150 });
-  const [scale, setScale] = useState(1.0);
-
   const lastPanRef = useRef({ x: SCREEN_WIDTH / 2, y: 150 });
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -50,7 +52,10 @@ export const InfiniteCanvas: React.FC<Props> = ({
 
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
-      {/* Canvas Transform Container */}
+      {/* Background Dot Matrix Grid */}
+      <View style={styles.gridOverlay} pointerEvents="none" />
+
+      {/* Canvas Transform View */}
       <View
         style={[
           styles.canvasArea,
@@ -96,15 +101,19 @@ export const InfiniteCanvas: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090B',
+    backgroundColor: THEME.bg,
     overflow: 'hidden',
+  },
+  gridOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.15,
   },
   canvasArea: {
     position: 'absolute',
-    width: 5000,
-    height: 5000,
-    left: -2500,
-    top: -2500,
+    width: 6000,
+    height: 6000,
+    left: -3000,
+    top: -3000,
   },
   nodeWrapper: {
     position: 'absolute',
