@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
 import { SynapseNode, NodeType, SortField } from '../types';
@@ -36,9 +37,11 @@ export const ArchitectureSectionsScreen: React.FC = () => {
     nodes,
     relations,
     isLoading,
+    activeProject,
     activeTypeFilter,
     setTypeFilter,
     selectNode,
+    selectProject,
     openCreateNodeModal,
     openCreateRelationModal,
     sortField,
@@ -47,6 +50,14 @@ export const ArchitectureSectionsScreen: React.FC = () => {
   } = useSynapseMobileStore();
 
   const [localSearch, setLocalSearch] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    if (!activeProject) return;
+    setRefreshing(true);
+    await selectProject(activeProject.id);
+    setRefreshing(false);
+  }, [activeProject, selectProject]);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
   const toggleCategory = (typeKey: string) => {
@@ -200,6 +211,14 @@ export const ArchitectureSectionsScreen: React.FC = () => {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={THEME.accent}
+              colors={[THEME.accent]}
+            />
+          }
         >
           {CATEGORY_ORDER.map((cat) => {
             const catNodes = groupedByCategory.get(cat.type) || [];

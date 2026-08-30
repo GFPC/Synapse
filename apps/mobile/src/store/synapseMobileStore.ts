@@ -216,7 +216,8 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
 
   selectProject: async (projectId: string) => {
     const proj = get().projects.find((p) => p.id === projectId) || null;
-    set({ activeProject: proj });
+    // Clear nodes immediately so UI never shows stale data from a previous project
+    set({ activeProject: proj, nodes: [], relations: [], selectedNodeId: null });
     await get().fetchNodesAndRelations(projectId);
 
     // Connect to Live WebSocket
@@ -267,17 +268,21 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
     set({ isLoading: true });
     try {
       const nodes = await nodesApi.listByProject(projectId);
-      synapseCore.updateSpatialIndex(nodes);
 
-      set({
-        nodes,
-        isLoading: false,
-      });
+      // Guard: if user switched projects while we were fetching, discard stale data
+      if (get().activeProject?.id !== projectId) return;
+
+      synapseCore.updateSpatialIndex(nodes);
+      set({ nodes, isLoading: false });
 
       // Fetch relations for up to 100 nodes in parallel (API deduplicates shared edges)
       if (nodes.length > 0) {
         const promises = nodes.slice(0, 100).map((node) => nodesApi.getRelations(node.id));
         const results = await Promise.all(promises);
+
+        // Guard again: discard relations if project changed mid-fetch
+        if (get().activeProject?.id !== projectId) return;
+
         const allRelations = results.flat();
         const uniqueRelations = Array.from(
           new Map(allRelations.map((r) => [r.id, r])).values()
