@@ -23,13 +23,13 @@ interface Props {
 }
 
 const TYPES: NodeType[] = [
+  'benchmark',
   'component',
   'feature',
   'decision',
   'solution',
   'problem',
   'risk',
-  'benchmark',
   'deployment',
   'test',
   'note',
@@ -39,6 +39,8 @@ const TYPES: NodeType[] = [
 ];
 
 const STATUSES = ['in_progress', 'completed', 'blocked', 'draft', 'accepted', 'closed'];
+
+type BenchCategory = 'throughput' | 'latency' | 'resources' | 'reliability' | 'custom';
 
 const formatDate = (val?: string | number | null): string => {
   if (!val) return 'Recently';
@@ -91,9 +93,25 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
   const [editType, setEditType] = useState<NodeType>('component');
   const [editStatus, setEditStatus] = useState('in_progress');
   const [editTags, setEditTags] = useState('');
-  const [editLatency, setEditLatency] = useState('');
-  const [editThroughput, setEditThroughput] = useState('');
-  const [editSlo, setEditSlo] = useState('');
+
+  // Benchmark specific states
+  const [benchCat, setBenchCat] = useState<BenchCategory>('latency');
+  const [latencyP50, setLatencyP50] = useState('');
+  const [latencyP99, setLatencyP99] = useState('');
+  const [latencySlo, setLatencySlo] = useState('');
+  const [throughputOps, setThroughputOps] = useState('');
+  const [throughputTps, setThroughputTps] = useState('');
+  const [throughputConcurrency, setThroughputConcurrency] = useState('');
+  const [memoryMb, setMemoryMb] = useState('');
+  const [cpuUsage, setCpuUsage] = useState('');
+  const [gcPause, setGcPause] = useState('');
+  const [errorRate, setErrorRate] = useState('');
+  const [packetLoss, setPacketLoss] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [customKey, setCustomKey] = useState('');
+  const [customVal, setCustomVal] = useState('');
+  const [customUnit, setCustomUnit] = useState('');
+
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -123,9 +141,22 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
       setEditType((node.type as NodeType) || 'component');
       setEditStatus(node.status || 'in_progress');
       setEditTags((node.tags || []).join(', '));
-      setEditLatency(node.meta?.p99_latency_ms || node.meta?.latency || '');
-      setEditThroughput(node.meta?.throughput || node.meta?.ops_sec || '');
-      setEditSlo(node.meta?.slo_target || '');
+
+      const meta = node.meta || {};
+      const cat = (meta.benchmark_type as BenchCategory) || 'latency';
+      setBenchCat(cat);
+      setLatencyP50(meta.p50_latency_ms || '');
+      setLatencyP99(meta.p99_latency_ms || meta.latency || '');
+      setLatencySlo(meta.slo_target || '');
+      setThroughputOps(meta.throughput || meta.ops_sec || '');
+      setThroughputTps(meta.tps || '');
+      setThroughputConcurrency(meta.concurrency || '');
+      setMemoryMb(meta.memory_mb || meta.peak_ram_mb || '');
+      setCpuUsage(meta.cpu_usage_pct || '');
+      setGcPause(meta.gc_pause_ms || '');
+      setErrorRate(meta.error_rate || '');
+      setPacketLoss(meta.packet_loss || '');
+      setAvailability(meta.availability || '');
     }
   }, [visible, node?.id, nodeModalMode]);
 
@@ -154,9 +185,28 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
 
       const meta: Record<string, any> = { ...(node.meta || {}) };
       if (editType === 'benchmark') {
-        if (editLatency.trim()) meta.p99_latency_ms = editLatency.trim();
-        if (editThroughput.trim()) meta.throughput = editThroughput.trim();
-        if (editSlo.trim()) meta.slo_target = editSlo.trim();
+        meta.benchmark_type = benchCat;
+        if (benchCat === 'latency') {
+          if (latencyP50.trim()) meta.p50_latency_ms = latencyP50.trim();
+          if (latencyP99.trim()) meta.p99_latency_ms = latencyP99.trim();
+          if (latencySlo.trim()) meta.slo_target = latencySlo.trim();
+        } else if (benchCat === 'throughput') {
+          if (throughputOps.trim()) meta.throughput = throughputOps.trim();
+          if (throughputTps.trim()) meta.tps = throughputTps.trim();
+          if (throughputConcurrency.trim()) meta.concurrency = throughputConcurrency.trim();
+        } else if (benchCat === 'resources') {
+          if (memoryMb.trim()) meta.memory_mb = memoryMb.trim();
+          if (cpuUsage.trim()) meta.cpu_usage_pct = cpuUsage.trim();
+          if (gcPause.trim()) meta.gc_pause_ms = gcPause.trim();
+        } else if (benchCat === 'reliability') {
+          if (errorRate.trim()) meta.error_rate = errorRate.trim();
+          if (packetLoss.trim()) meta.packet_loss = packetLoss.trim();
+          if (availability.trim()) meta.slo_target = availability.trim();
+        } else if (benchCat === 'custom') {
+          if (customKey.trim() && customVal.trim()) {
+            meta[customKey.trim().toLowerCase().replace(/\s+/g, '_')] = `${customVal.trim()} ${customUnit.trim()}`.trim();
+          }
+        }
       }
 
       await updateNode(node.id, {
@@ -340,42 +390,218 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                   placeholderTextColor={THEME.text4}
                 />
 
-                {/* Benchmark Metrics Inputs */}
+                {/* BENCHMARK DYNAMIC METRICS BUILDER */}
                 {editType === 'benchmark' && (
                   <View style={styles.benchmarkBox}>
-                    <Text style={styles.benchHeaderTitle}>BENCHMARK SLO GAUGES</Text>
-                    <View style={styles.benchInputsRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.subLabel}>p99 LATENCY</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={editLatency}
-                          onChangeText={setEditLatency}
-                          placeholder="0.12ms"
-                          placeholderTextColor={THEME.text4}
-                        />
+                    <Text style={styles.benchHeaderTitle}>BENCHMARK METRIC CATEGORY</Text>
+                    
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.benchCatRow}>
+                      {[
+                        { id: 'latency', label: '⏱️ Latency & SLO' },
+                        { id: 'throughput', label: '⚡ Throughput & TPS' },
+                        { id: 'resources', label: '💾 Memory & CPU' },
+                        { id: 'reliability', label: '🛡️ Reliability & Errors' },
+                        { id: 'custom', label: '⚙️ Custom Metric' },
+                      ].map((cat) => (
+                        <TouchableOpacity
+                          key={cat.id}
+                          style={[
+                            styles.benchCatChip,
+                            benchCat === cat.id && styles.benchCatChipActive,
+                          ]}
+                          onPress={() => setBenchCat(cat.id as BenchCategory)}
+                        >
+                          <Text
+                            style={[
+                              styles.benchCatText,
+                              benchCat === cat.id && styles.benchCatTextActive,
+                            ]}
+                          >
+                            {cat.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+
+                    {/* Latency Mode Inputs */}
+                    {benchCat === 'latency' && (
+                      <View style={styles.benchInputsRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>p50 LATENCY</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={latencyP50}
+                            onChangeText={setLatencyP50}
+                            placeholder="0.05ms"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>p99 LATENCY</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={latencyP99}
+                            onChangeText={setLatencyP99}
+                            placeholder="0.12ms"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>SLO TARGET</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={latencySlo}
+                            onChangeText={setLatencySlo}
+                            placeholder="< 1.0ms"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.subLabel}>THROUGHPUT</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={editThroughput}
-                          onChangeText={setEditThroughput}
-                          placeholder="25k ops/sec"
-                          placeholderTextColor={THEME.text4}
-                        />
+                    )}
+
+                    {/* Throughput Mode Inputs */}
+                    {benchCat === 'throughput' && (
+                      <View style={styles.benchInputsRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>OPS / SEC</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={throughputOps}
+                            onChangeText={setThroughputOps}
+                            placeholder="6,000,000 ops/s"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>TPS (SETTLEMENT)</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={throughputTps}
+                            onChangeText={setThroughputTps}
+                            placeholder="450,000 TPS"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>CONCURRENCY</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={throughputConcurrency}
+                            onChangeText={setThroughputConcurrency}
+                            placeholder="1,000 clients"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.subLabel}>SLO TARGET</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={editSlo}
-                          onChangeText={setEditSlo}
-                          placeholder="< 1.0ms"
-                          placeholderTextColor={THEME.text4}
-                        />
+                    )}
+
+                    {/* Resource Mode Inputs */}
+                    {benchCat === 'resources' && (
+                      <View style={styles.benchInputsRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>PEAK RAM (RSS)</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={memoryMb}
+                            onChangeText={setMemoryMb}
+                            placeholder="128 MB"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>CPU LOAD %</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={cpuUsage}
+                            onChangeText={setCpuUsage}
+                            placeholder="18.5%"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>GC PAUSE (MAX)</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={gcPause}
+                            onChangeText={setGcPause}
+                            placeholder="0.02ms"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
                       </View>
-                    </View>
+                    )}
+
+                    {/* Reliability Mode Inputs */}
+                    {benchCat === 'reliability' && (
+                      <View style={styles.benchInputsRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>ERROR RATE</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={errorRate}
+                            onChangeText={setErrorRate}
+                            placeholder="0.0001%"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>PACKET LOSS</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={packetLoss}
+                            onChangeText={setPacketLoss}
+                            placeholder="0.0%"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>AVAILABILITY</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={availability}
+                            onChangeText={setAvailability}
+                            placeholder="99.999%"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Custom Key-Value Inputs */}
+                    {benchCat === 'custom' && (
+                      <View style={styles.benchInputsRow}>
+                        <View style={{ flex: 1.2 }}>
+                          <Text style={styles.subLabel}>METRIC NAME</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={customKey}
+                            onChangeText={setCustomKey}
+                            placeholder="Compression Ratio"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subLabel}>VALUE</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={customVal}
+                            onChangeText={setCustomVal}
+                            placeholder="4.8"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                        <View style={{ flex: 0.8 }}>
+                          <Text style={styles.subLabel}>UNIT</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={customUnit}
+                            onChangeText={setCustomUnit}
+                            placeholder="x"
+                            placeholderTextColor={THEME.text4}
+                          />
+                        </View>
+                      </View>
+                    )}
                   </View>
                 )}
 
@@ -876,13 +1102,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME.border,
     marginTop: 8,
-    gap: 6,
+    gap: 8,
   },
   benchHeaderTitle: {
     fontFamily: 'monospace',
     fontSize: 9,
     fontWeight: '700',
     color: THEME.accentBright,
+  },
+  benchCatRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  benchCatChip: {
+    backgroundColor: THEME.surface3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginRight: 6,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  benchCatChipActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    borderColor: '#6366F1',
+  },
+  benchCatText: {
+    fontSize: 10,
+    color: THEME.text3,
+    fontWeight: '600',
+  },
+  benchCatTextActive: {
+    color: '#818CF8',
+    fontWeight: '700',
   },
   benchInputsRow: {
     flexDirection: 'row',
