@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,13 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
-import { SynapseNode, NodeType } from '../../types';
-import { THEME, NODE_TYPE_CONFIG } from '../../theme/tokens';
+import { SynapseNode, NodeType, RelationType, Comment } from '../../types';
+import { THEME, NODE_TYPE_CONFIG, RELATION_CONFIG, RelationConfig } from '../../theme/tokens';
+import { useSynapseMobileStore } from '../../store/synapseMobileStore';
+import { BenchmarkMeter } from '../nodes/BenchmarkMeter';
 
 interface Props {
   node: SynapseNode | null;
@@ -17,405 +21,679 @@ interface Props {
 }
 
 export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'relations' | 'comments'>('overview');
-
   if (!node) return null;
 
-  const config = NODE_TYPE_CONFIG[node.type as NodeType] || NODE_TYPE_CONFIG.note;
+  const {
+    nodes,
+    relations,
+    commentsMap,
+    fetchComments,
+    addComment,
+    toggleReaction,
+    deleteNode,
+    openCreateRelationModal,
+    selectNode,
+  } = useSynapseMobileStore();
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'relations' | 'comments' | 'meta'>('overview');
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    if (visible && node) {
+      fetchComments(node.id);
+    }
+  }, [visible, node?.id]);
+
+  const conf = NODE_TYPE_CONFIG[node.type as NodeType] || NODE_TYPE_CONFIG.note;
+  const isBenchmark = node.type === 'benchmark';
+
+  const nodeMap = new Map<string, SynapseNode>();
+  nodes.forEach((n) => nodeMap.set(n.id, n));
+
+  const nodeRelations = relations.filter(
+    (r) => r.from_node_id === node.id || r.to_node_id === node.id
+  );
+
+  const comments: Comment[] = commentsMap[node.id] || [];
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+    setIsSubmittingComment(true);
+    await addComment(node.id, commentText.trim());
+    setCommentText('');
+    setIsSubmittingComment(false);
+  };
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          {/* Handle bar */}
-          <View style={styles.handleBar} />
-
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.typeChip, { backgroundColor: config.bg, borderColor: config.border }]}>
-                <Text style={[styles.typeIcon, { color: config.color }]}>{config.iconText}</Text>
-              </View>
-              <Text style={[styles.displayId, { color: config.color }]}>{node.display_id}</Text>
-              <View style={styles.statusPill}>
-                <View style={[styles.statusDot, { backgroundColor: THEME.status.ok }]} />
-                <Text style={styles.statusText}>{node.status || 'active'}</Text>
-              </View>
+      <View style={styles.container}>
+        {/* Header Bar */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View
+              style={[
+                styles.typeBadge,
+                { backgroundColor: conf.bg, borderColor: conf.border },
+              ]}
+            >
+              <Text style={[styles.typeIcon, { color: conf.color }]}>
+                {conf.iconText}
+              </Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeBtnText}>✕</Text>
-            </TouchableOpacity>
+            <View>
+              <View style={styles.idRow}>
+                <Text style={[styles.displayId, { color: conf.color }]}>
+                  {node.display_id}
+                </Text>
+                <Text style={styles.typeLabel}>{conf.label}</Text>
+              </View>
+              <Text style={styles.statusLabel}>статус: {node.status || 'in_progress'}</Text>
+            </View>
           </View>
 
-          {/* Tab Navigation */}
-          <View style={styles.tabRow}>
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'overview' && styles.tabBtnActive]}
-              onPress={() => setActiveTab('overview')}
-            >
-              <Text style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
-                Обзор
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Text style={styles.closeBtnText}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'relations' && styles.tabBtnActive]}
-              onPress={() => setActiveTab('relations')}
-            >
-              <Text style={[styles.tabText, activeTab === 'relations' && styles.tabTextActive]}>
-                Связи графа
-              </Text>
-            </TouchableOpacity>
+        {/* Tab Navigation */}
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'overview' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('overview')}
+          >
+            <Text style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
+              Обзор
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'comments' && styles.tabBtnActive]}
-              onPress={() => setActiveTab('comments')}
-            >
-              <Text style={[styles.tabText, activeTab === 'comments' && styles.tabTextActive]}>
-                Обсуждение
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'relations' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('relations')}
+          >
+            <Text style={[styles.tabText, activeTab === 'relations' && styles.tabTextActive]}>
+              Связи ({nodeRelations.length})
+            </Text>
+          </TouchableOpacity>
 
-          <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            {activeTab === 'overview' && (
-              <>
-                {/* Title */}
-                <Text style={styles.title}>{node.title}</Text>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'comments' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('comments')}
+          >
+            <Text style={[styles.tabText, activeTab === 'comments' && styles.tabTextActive]}>
+              Обсуждение ({comments.length})
+            </Text>
+          </TouchableOpacity>
 
-                {/* Tags */}
-                {node.tags && node.tags.length > 0 && (
-                  <View style={styles.tagsArea}>
-                    {node.tags.map((t, idx) => (
-                      <View key={idx} style={styles.tagChip}>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'meta' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('meta')}
+          >
+            <Text style={[styles.tabText, activeTab === 'meta' && styles.tabTextActive]}>
+              Meta JSON
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Main Content Area */}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <View style={styles.tabSection}>
+              <Text style={styles.title}>{node.title}</Text>
+
+              {isBenchmark && <BenchmarkMeter meta={node.meta} />}
+
+              <View style={styles.cardBox}>
+                <Text style={styles.boxTitle}>ОПИСАНИЕ И АРХИТЕКТУРНЫЙ КОНТЕКСТ</Text>
+                <Text style={styles.contentText}>
+                  {node.content || 'Описание для этого узла отсутствует.'}
+                </Text>
+              </View>
+
+              {/* Tags Section */}
+              <View style={styles.cardBox}>
+                <Text style={styles.boxTitle}>ТЕГИ СИСТЕМЫ</Text>
+                <View style={styles.tagsWrap}>
+                  {node.tags && node.tags.length > 0 ? (
+                    node.tags.map((t, i) => (
+                      <View key={i} style={styles.tagPill}>
                         <Text style={styles.tagText}>#{t}</Text>
                       </View>
-                    ))}
-                  </View>
-                )}
-
-                {/* Content Box */}
-                <View style={styles.contentBox}>
-                  <Text style={styles.sectionLabel}>КОНТЕКСТ И ОПИСАНИЕ</Text>
-                  <Text style={styles.contentText}>
-                    {node.content || 'Описание отсутствует.'}
-                  </Text>
-                </View>
-
-                {/* Metadata Grid */}
-                <View style={styles.metaBox}>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>Координаты на холсте:</Text>
-                    <Text style={styles.metaVal}>X: {Math.round(node.canvas_x)}, Y: {Math.round(node.canvas_y)}</Text>
-                  </View>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>Видимость:</Text>
-                    <Text style={styles.metaVal}>{node.visibility}</Text>
-                  </View>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>Тип узла:</Text>
-                    <Text style={[styles.metaVal, { color: config.color }]}>{config.label}</Text>
-                  </View>
-                </View>
-              </>
-            )}
-
-            {activeTab === 'relations' && (
-              <View style={styles.relationsBox}>
-                <Text style={styles.sectionLabel}>АРХИТЕКТУРНЫЕ ЗАВИСИМОСТИ</Text>
-                <View style={styles.relItem}>
-                  <Text style={styles.relTypeBadge}>depends_on</Text>
-                  <Text style={styles.relTargetText}>Edge Gateway & Reverse Proxy (Nginx)</Text>
-                </View>
-                <View style={styles.relItem}>
-                  <Text style={styles.relTypeBadge}>implements</Text>
-                  <Text style={styles.relTargetText}>Bi-directional WebSocket Room Multiplexer</Text>
+                    ))
+                  ) : (
+                    <Text style={styles.noDataText}>Теги не указаны</Text>
+                  )}
                 </View>
               </View>
-            )}
 
-            {activeTab === 'comments' && (
-              <View style={styles.commentsBox}>
-                <Text style={styles.sectionLabel}>РЕАКЦИИ И ОБСУЖДЕНИЕ</Text>
-                <View style={styles.commentItem}>
-                  <View style={styles.commentHead}>
-                    <Text style={styles.commentAuthor}>Lead Architect</Text>
-                    <Text style={styles.commentTime}>2ч назад</Text>
-                  </View>
-                  <Text style={styles.commentBody}>
-                    Решение утверждено и согласовано на архитектурном комитете.
-                  </Text>
-                  <View style={styles.reactionsRow}>
-                    <TouchableOpacity style={styles.reactionBtn}>
-                      <Text style={styles.reactionText}>👍 4</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.reactionBtn}>
-                      <Text style={styles.reactionText}>✅ 2</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.reactionBtn}>
-                      <Text style={styles.reactionText}>❤️ 1</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+              {/* Author & Timestamps */}
+              <View style={styles.metaRow}>
+                <Text style={styles.metaItem}>
+                  Автор: {node.author?.name || 'Lead Architect'}
+                </Text>
+                <Text style={styles.metaItem}>
+                  Обновлено: {new Date(node.updated_at).toLocaleDateString()}
+                </Text>
               </View>
-            )}
-          </ScrollView>
-        </View>
+            </View>
+          )}
+
+          {/* TAB 2: RELATIONS */}
+          {activeTab === 'relations' && (
+            <View style={styles.tabSection}>
+              <View style={styles.relHeaderRow}>
+                <Text style={styles.boxTitle}>СВЯЗАННЫЕ УЗЛЫ ГРАФА</Text>
+                <TouchableOpacity
+                  style={styles.addRelBtn}
+                  onPress={() => openCreateRelationModal(node)}
+                >
+                  <Text style={styles.addRelBtnText}>＋ Добавить связь</Text>
+                </TouchableOpacity>
+              </View>
+
+              {nodeRelations.length === 0 ? (
+                <View style={styles.emptyRelBox}>
+                  <Text style={styles.emptyRelText}>
+                    У этого узла пока нет связей с другими компонентами.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.relsList}>
+                  {nodeRelations.map((rel) => {
+                    const isOut = rel.from_node_id === node.id;
+                    const target = isOut ? nodeMap.get(rel.to_node_id) : nodeMap.get(rel.from_node_id);
+                    const relConf: RelationConfig =
+                      RELATION_CONFIG[rel.type as keyof typeof RELATION_CONFIG] ||
+                      RELATION_CONFIG.related;
+
+                    return (
+                      <TouchableOpacity
+                        key={rel.id}
+                        style={styles.relationCard}
+                        activeOpacity={0.75}
+                        onPress={() => target && selectNode(target.id)}
+                      >
+                        <View style={styles.relBadgeBox}>
+                          <Text style={[styles.relDirectionText, { color: relConf.color }]}>
+                            {isOut ? 'ИСХОДЯЩАЯ' : 'ВХОДЯЩАЯ'}
+                          </Text>
+                          <View
+                            style={[
+                              styles.relTypePill,
+                              { backgroundColor: `${relConf.color}20`, borderColor: relConf.color },
+                            ]}
+                          >
+                            <Text style={[styles.relTypeTitle, { color: relConf.color }]}>
+                              {relConf.label}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={styles.relTargetTitle}>
+                          {target ? `[${target.display_id}] ${target.title}` : 'Удаленный узел'}
+                        </Text>
+
+                        {rel.note ? (
+                          <Text style={styles.relNoteText}>Заметка: {rel.note}</Text>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* TAB 3: COMMENTS & REACTIONS */}
+          {activeTab === 'comments' && (
+            <View style={styles.tabSection}>
+              <Text style={styles.boxTitle}>ОБСУЖДЕНИЕ АРХИТЕКТУРЫ</Text>
+
+              {/* Add Comment Input */}
+              <View style={styles.addCommentBox}>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Оставить комментарий к решению..."
+                  placeholderTextColor={THEME.text4}
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  multiline
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.sendCommentBtn,
+                    !commentText.trim() && { opacity: 0.5 },
+                  ]}
+                  disabled={!commentText.trim() || isSubmittingComment}
+                  onPress={handleAddComment}
+                >
+                  {isSubmittingComment ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <Text style={styles.sendCommentText}>Отправить</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Comments Thread */}
+              {comments.length === 0 ? (
+                <View style={styles.emptyRelBox}>
+                  <Text style={styles.emptyRelText}>
+                    Комментариев пока нет. Будьте первым!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.commentsList}>
+                  {comments.map((comm) => (
+                    <View key={comm.id} style={styles.commentItem}>
+                      <View style={styles.commentHead}>
+                        <View style={styles.commentAvatar}>
+                          <Text style={styles.commentAvatarText}>LA</Text>
+                        </View>
+                        <View>
+                          <Text style={styles.commentAuthor}>
+                            {comm.author?.name || 'Lead Architect'}
+                          </Text>
+                          <Text style={styles.commentDate}>
+                            {new Date(comm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.commentBody}>{comm.content}</Text>
+
+                      {/* Emoji Reactions Row */}
+                      <View style={styles.reactionsRow}>
+                        {['👍', '✅', '❓', '❤️'].map((emoji) => {
+                          const count =
+                            comm.reactions?.filter((r) => r.emoji === emoji).length || 0;
+                          return (
+                            <TouchableOpacity
+                              key={emoji}
+                              style={[
+                                styles.emojiBtn,
+                                count > 0 && styles.emojiBtnActive,
+                              ]}
+                              onPress={() => toggleReaction(node.id, comm.id, emoji)}
+                            >
+                              <Text style={styles.emojiText}>{emoji}</Text>
+                              {count > 0 && (
+                                <Text style={styles.emojiCount}>{count}</Text>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* TAB 4: META JSON */}
+          {activeTab === 'meta' && (
+            <View style={styles.tabSection}>
+              <Text style={styles.boxTitle}>МЕТАДАННЫЕ УЗЛА (RAW JSON)</Text>
+              <View style={styles.jsonBox}>
+                <Text style={styles.jsonText}>
+                  {JSON.stringify(node.meta || {}, null, 2)}
+                </Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: THEME.surface1,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    borderColor: THEME.border2,
-    maxHeight: '84%',
-    paddingBottom: 34,
-  },
-  handleBar: {
-    width: 38,
-    height: 4,
-    backgroundColor: THEME.surface4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 10,
-    marginBottom: 8,
+    backgroundColor: THEME.bg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: THEME.surface1,
     borderBottomWidth: 1,
     borderBottomColor: THEME.border,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+    flex: 1,
   },
-  typeChip: {
-    width: 26,
-    height: 26,
+  typeBadge: {
+    width: 32,
+    height: 32,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   typeIcon: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  idRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  displayId: {
+    fontFamily: 'monospace',
     fontSize: 13,
     fontWeight: '700',
   },
-  displayId: {
-    fontSize: 14,
-    fontFamily: 'monospace',
-    fontWeight: '700',
+  typeLabel: {
+    fontSize: 12,
+    color: THEME.text3,
   },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: THEME.surface2,
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: THEME.radius.pill,
-  },
-  statusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  statusText: {
+  statusLabel: {
     fontSize: 10,
     fontFamily: 'monospace',
-    color: THEME.text2,
+    color: THEME.text4,
   },
   closeBtn: {
-    padding: 6,
+    backgroundColor: THEME.surface2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeBtnText: {
-    fontSize: 16,
-    color: THEME.text3,
+    fontSize: 13,
+    color: THEME.text2,
   },
   tabRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: THEME.surface1,
     borderBottomWidth: 1,
     borderBottomColor: THEME.border,
-    gap: 6,
   },
   tabBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: THEME.radius.pill,
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
   },
   tabBtnActive: {
-    backgroundColor: THEME.surface3,
+    borderBottomWidth: 2,
+    borderBottomColor: THEME.accent,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 11,
     color: THEME.text3,
     fontWeight: '500',
   },
   tabTextActive: {
-    color: THEME.text1,
+    color: THEME.accentBright,
     fontWeight: '700',
   },
-  body: {
-    padding: 18,
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  tabSection: {
+    gap: 14,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: THEME.text1,
-    lineHeight: 24,
-    marginBottom: 12,
+    lineHeight: 22,
   },
-  tagsArea: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 16,
-  },
-  tagChip: {
-    backgroundColor: THEME.surface2,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: THEME.border,
-  },
-  tagText: {
-    fontSize: 11,
-    color: THEME.accentBright,
-  },
-  contentBox: {
-    backgroundColor: THEME.bg,
-    padding: 14,
+  cardBox: {
+    backgroundColor: THEME.surface1,
     borderRadius: THEME.radius.md,
     borderWidth: 1,
     borderColor: THEME.border,
-    marginBottom: 16,
+    padding: 12,
+    gap: 8,
   },
-  sectionLabel: {
+  boxTitle: {
     fontFamily: 'monospace',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
     color: THEME.text4,
-    letterSpacing: 0.6,
-    marginBottom: 6,
+    letterSpacing: 0.5,
   },
   contentText: {
     fontSize: 13,
     color: THEME.text2,
-    lineHeight: 20,
+    lineHeight: 19,
   },
-  metaBox: {
-    backgroundColor: THEME.surface2,
-    borderRadius: THEME.radius.md,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: THEME.border,
+  tagsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagPill: {
+    backgroundColor: THEME.surface3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  tagText: {
+    fontSize: 11,
+    color: THEME.accentBright,
+    fontWeight: '500',
+  },
+  noDataText: {
+    fontSize: 12,
+    color: THEME.text4,
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: THEME.border,
   },
-  metaLabel: {
-    fontSize: 11,
-    color: THEME.text3,
-  },
-  metaVal: {
+  metaItem: {
+    fontSize: 10.5,
     fontFamily: 'monospace',
-    fontSize: 11,
-    color: THEME.text1,
-    fontWeight: '600',
+    color: THEME.text4,
   },
-  relationsBox: {
-    gap: 8,
-  },
-  relItem: {
+  relHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: THEME.surface2,
-    padding: 12,
+    justifyContent: 'space-between',
+  },
+  addRelBtn: {
+    backgroundColor: THEME.surface3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  addRelBtnText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: THEME.accentBright,
+  },
+  emptyRelBox: {
+    backgroundColor: THEME.surface1,
+    borderRadius: THEME.radius.md,
+    padding: 16,
+    alignItems: 'center',
+  },
+  emptyRelText: {
+    fontSize: 12,
+    color: THEME.text3,
+    textAlign: 'center',
+  },
+  relsList: {
+    gap: 8,
+  },
+  relationCard: {
+    backgroundColor: THEME.surface1,
     borderRadius: THEME.radius.md,
     borderWidth: 1,
     borderColor: THEME.border,
+    padding: 12,
+    gap: 6,
   },
-  relTypeBadge: {
+  relBadgeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  relDirectionText: {
     fontFamily: 'monospace',
-    fontSize: 10,
-    color: THEME.accentBright,
-    backgroundColor: THEME.accentDim,
+    fontSize: 8.5,
+    fontWeight: '700',
+  },
+  relTypePill: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+    borderWidth: 1,
   },
-  relTargetText: {
-    fontSize: 12,
+  relTypeTitle: {
+    fontFamily: 'monospace',
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  relTargetTitle: {
+    fontSize: 13,
+    fontWeight: '700',
     color: THEME.text1,
-    flex: 1,
   },
-  commentsBox: {
-    gap: 10,
+  relNoteText: {
+    fontSize: 11,
+    color: THEME.text3,
   },
-  commentItem: {
-    backgroundColor: THEME.surface2,
-    padding: 12,
+  addCommentBox: {
+    backgroundColor: THEME.surface1,
     borderRadius: THEME.radius.md,
     borderWidth: 1,
     borderColor: THEME.border,
+    padding: 10,
+    gap: 8,
+  },
+  commentInput: {
+    backgroundColor: THEME.surface2,
+    borderRadius: THEME.radius.sm,
+    padding: 8,
+    fontSize: 12,
+    color: THEME.text1,
+    minHeight: 50,
+  },
+  sendCommentBtn: {
+    backgroundColor: THEME.accent,
+    paddingVertical: 7,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  sendCommentText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#000',
+  },
+  commentsList: {
+    gap: 8,
+  },
+  commentItem: {
+    backgroundColor: THEME.surface1,
+    borderRadius: THEME.radius.md,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    padding: 10,
+    gap: 6,
   },
   commentHead: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    alignItems: 'center',
+    gap: 8,
+  },
+  commentAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: THEME.surface3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentAvatarText: {
+    fontSize: 9,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+    color: THEME.text2,
   },
   commentAuthor: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11.5,
+    fontWeight: '700',
     color: THEME.text1,
   },
-  commentTime: {
-    fontSize: 10,
+  commentDate: {
+    fontSize: 9,
+    fontFamily: 'monospace',
     color: THEME.text4,
   },
   commentBody: {
     fontSize: 12,
     color: THEME.text2,
-    lineHeight: 18,
-    marginBottom: 8,
+    lineHeight: 16,
   },
   reactionsRow: {
     flexDirection: 'row',
     gap: 6,
+    marginTop: 2,
   },
-  reactionBtn: {
-    backgroundColor: THEME.surface3,
-    paddingHorizontal: 8,
+  emojiBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: THEME.surface2,
+    paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: THEME.radius.pill,
   },
-  reactionText: {
+  emojiBtnActive: {
+    backgroundColor: THEME.accentDim,
+    borderWidth: 1,
+    borderColor: THEME.accentLine,
+  },
+  emojiText: {
     fontSize: 11,
+  },
+  emojiCount: {
+    fontSize: 10,
+    fontFamily: 'monospace',
+    color: THEME.accentBright,
+    fontWeight: '700',
+  },
+  jsonBox: {
+    backgroundColor: THEME.surface1,
+    borderRadius: THEME.radius.md,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    padding: 12,
+  },
+  jsonText: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    color: THEME.accentBright,
+    lineHeight: 15,
   },
 });

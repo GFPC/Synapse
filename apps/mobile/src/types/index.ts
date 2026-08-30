@@ -27,6 +27,11 @@ export type RelationType =
 export type UserRole = 'owner' | 'editor' | 'viewer';
 export type NodeVisibility = 'internal' | 'shared';
 
+export type MainTabType = 'sections' | 'tree' | 'metrics' | 'search' | 'projects';
+
+export type SortField = 'display_id' | 'updated_at' | 'title' | 'status';
+export type SortOrder = 'asc' | 'desc';
+
 export interface User {
   id: string;
   name: string;
@@ -76,6 +81,12 @@ export interface NodeRelation {
   to_node?: SynapseNode;
 }
 
+export interface Reaction {
+  comment_id: string;
+  user_id: string;
+  emoji: string;
+}
+
 export interface Comment {
   id: string;
   node_id: string;
@@ -85,6 +96,7 @@ export interface Comment {
   created_at: number;
   author?: User;
   replies?: Comment[];
+  reactions?: Reaction[];
 }
 
 export interface Attachment {
@@ -98,6 +110,12 @@ export interface Attachment {
   mime_type?: string;
   size_bytes?: number;
   created_at: number;
+}
+
+export interface SearchResult {
+  node: SynapseNode;
+  snippet?: string;
+  rank?: number;
 }
 
 export interface Viewport {
