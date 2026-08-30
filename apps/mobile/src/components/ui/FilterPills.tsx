@@ -46,7 +46,7 @@ export const FilterPills: React.FC<Props> = ({
                 <Text
                   style={[
                     styles.chipIcon,
-                    { color: isActive ? conf.color : THEME.text4 },
+                    { color: isActive ? conf.color : THEME.text3 },
                   ]}
                 >
                   {conf.iconText}
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 6,
     gap: 6,
   },
   chip: {
@@ -102,18 +102,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     backgroundColor: THEME.surface2,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: THEME.border,
+    height: 28,
   },
   chipActive: {
     backgroundColor: THEME.accentDim,
     borderColor: THEME.accentLine,
   },
   chipIcon: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
   },
   chipText: {
@@ -123,16 +124,16 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: THEME.accentBright,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   countPill: {
     backgroundColor: THEME.surface3,
     paddingHorizontal: 4,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   countPillActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   countText: {
     fontSize: 9,

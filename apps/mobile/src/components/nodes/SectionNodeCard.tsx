@@ -54,26 +54,16 @@ export const SectionNodeCard: React.FC<Props> = ({
       onPress={onPress}
       onLongPress={onAddRelation}
     >
-      {/* Top Row: Type chip, Display ID, Status */}
+      {/* Top Meta Line: ID, Type Label, Status */}
       <View style={styles.topRow}>
         <View style={styles.typeGroup}>
-          <View
-            style={[
-              styles.typeBadge,
-              { backgroundColor: conf.bg, borderColor: conf.border },
-            ]}
-          >
-            <Text style={[styles.typeIcon, { color: conf.color }]}>
-              {conf.iconText}
-            </Text>
-          </View>
           <Text style={[styles.displayId, { color: conf.color }]}>
             {node.display_id}
           </Text>
           <Text style={styles.typeLabel}>{conf.label}</Text>
         </View>
 
-        <View style={styles.statusPill}>
+        <View style={styles.statusGroup}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           <Text style={styles.statusText}>{node.status || 'active'}</Text>
         </View>
@@ -107,8 +97,8 @@ export const SectionNodeCard: React.FC<Props> = ({
                 style={[
                   styles.relChip,
                   {
-                    borderColor: `${relConf.color}44`,
-                    backgroundColor: `${relConf.color}10`,
+                    borderColor: `${relConf.color}33`,
+                    backgroundColor: `${relConf.color}0D`,
                   },
                 ]}
               >
@@ -123,7 +113,7 @@ export const SectionNodeCard: React.FC<Props> = ({
           })}
           {nodeRelations.length > 2 && (
             <Text style={styles.moreRelsText}>
-              + {nodeRelations.length - 2} more relations
+              + {nodeRelations.length - 2} more
             </Text>
           )}
         </View>
@@ -140,14 +130,12 @@ export const SectionNodeCard: React.FC<Props> = ({
             ))
           ) : (
             <View style={styles.tagPill}>
-              <Text style={styles.tagText}>#architecture</Text>
+              <Text style={styles.tagText}>#system</Text>
             </View>
           )}
         </View>
 
-        <View style={styles.authorBadge}>
-          <Text style={styles.authorText}>{authorInitials}</Text>
-        </View>
+        <Text style={styles.authorText}>{authorInitials}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -156,38 +144,22 @@ export const SectionNodeCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: THEME.surface2,
-    borderRadius: THEME.radius.md,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: THEME.border,
-    padding: 13,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 10,
+    gap: 4,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 7,
+    marginBottom: 2,
   },
   typeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  typeBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  typeIcon: {
-    fontSize: 10,
-    fontWeight: '700',
   },
   displayId: {
     fontFamily: 'monospace',
@@ -195,20 +167,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   typeLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: THEME.text3,
     fontWeight: '500',
   },
-  statusPill: {
+  statusGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: THEME.surface3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: THEME.radius.pill,
-    borderWidth: 1,
-    borderColor: THEME.border,
   },
   statusDot: {
     width: 5,
@@ -216,60 +182,60 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   statusText: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontFamily: 'monospace',
-    color: THEME.text2,
+    color: THEME.text3,
     textTransform: 'lowercase',
   },
   title: {
-    fontSize: 13.5,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: THEME.text1,
-    lineHeight: 18,
-    marginBottom: 5,
+    lineHeight: 17,
   },
   contentSnippet: {
-    fontSize: 11.5,
+    fontSize: 11,
     color: THEME.text3,
-    lineHeight: 16,
-    marginBottom: 7,
+    lineHeight: 15,
+    marginTop: 2,
   },
   relationsContainer: {
-    gap: 4,
-    marginBottom: 7,
+    gap: 3,
+    marginTop: 4,
   },
   relChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
     borderWidth: 1,
   },
   relSymbol: {
     fontFamily: 'monospace',
-    fontSize: 9.5,
+    fontSize: 9,
     fontWeight: '700',
   },
   relTargetTitle: {
-    fontSize: 10.5,
+    fontSize: 10,
     color: THEME.text2,
     flex: 1,
   },
   moreRelsText: {
-    fontSize: 9.5,
+    fontSize: 9,
+    fontFamily: 'monospace',
     color: THEME.accentBright,
     fontWeight: '600',
-    marginTop: 1,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 6,
+    marginTop: 4,
+    paddingTop: 4,
     borderTopWidth: 1,
-    borderTopColor: THEME.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.04)',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -278,26 +244,19 @@ const styles = StyleSheet.create({
   },
   tagPill: {
     backgroundColor: THEME.surface3,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
   },
   tagText: {
-    fontSize: 9.5,
-    color: THEME.text3,
-  },
-  authorBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: THEME.surface4,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 9,
+    fontFamily: 'monospace',
+    color: THEME.text4,
   },
   authorText: {
     fontSize: 8.5,
     fontFamily: 'monospace',
     fontWeight: '700',
-    color: THEME.text2,
+    color: THEME.text4,
   },
 });

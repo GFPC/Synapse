@@ -19,16 +19,16 @@ const CATEGORY_ORDER: { type: NodeType; title: string; icon: string; color: stri
   { type: 'component', title: 'Components & Services', icon: '⬡', color: '#F59E0B' },
   { type: 'feature', title: 'Features & Capabilities', icon: '✦', color: '#3B82F6' },
   { type: 'decision', title: 'Architecture Decisions (ADR)', icon: '◆', color: '#8B5CF6' },
-  { type: 'benchmark', title: 'Benchmarks & SLO Performance', icon: '📊', color: '#6366F1' },
+  { type: 'benchmark', title: 'Benchmarks & SLOs', icon: '📊', color: '#6366F1' },
   { type: 'problem', title: 'Problems & Incidents', icon: '⚠️', color: '#EF4444' },
   { type: 'solution', title: 'Solutions & Patterns', icon: '✓', color: '#10B981' },
-  { type: 'risk', title: 'Technical Risks & Hazards', icon: '⚡', color: '#EC4899' },
+  { type: 'risk', title: 'Technical Risks', icon: '⚡', color: '#EC4899' },
   { type: 'test', title: 'Tests & Verification', icon: '🧪', color: '#2DD4BF' },
-  { type: 'deployment', title: 'Infrastructure & Deployment', icon: '▲', color: '#22C55E' },
-  { type: 'lesson', title: 'Architectural Lessons', icon: '💡', color: '#C2B280' },
+  { type: 'deployment', title: 'Deployment & Infra', icon: '▲', color: '#22C55E' },
+  { type: 'lesson', title: 'Lessons Learned', icon: '💡', color: '#C2B280' },
   { type: 'note', title: 'Notes & Documentation', icon: '📝', color: '#A1A1AA' },
-  { type: 'link', title: 'External Resources & Links', icon: '🔗', color: '#7C8AA5' },
-  { type: 'log', title: 'Change Log & Audit', icon: '⏱', color: '#6B7280' },
+  { type: 'link', title: 'External Links', icon: '🔗', color: '#7C8AA5' },
+  { type: 'log', title: 'Audit Logs', icon: '⏱', color: '#6B7280' },
 ];
 
 export const ArchitectureSectionsScreen: React.FC = () => {
@@ -71,7 +71,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
     });
 
     const items: FilterItem[] = [
-      { id: 'all', label: 'All Nodes', count: nodes.length },
+      { id: 'all', label: 'All', count: nodes.length },
     ];
 
     CATEGORY_ORDER.forEach((cat) => {
@@ -133,13 +133,13 @@ export const ArchitectureSectionsScreen: React.FC = () => {
         onSelectFilter={setTypeFilter}
       />
 
-      {/* Control Bar: Search, Expand/Collapse, Sort */}
+      {/* Sleek Search & Controls Bar */}
       <View style={styles.controlBar}>
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Filter by title, tags, display ID..."
+            placeholder="Search nodes, tags, IDs..."
             placeholderTextColor={THEME.text4}
             value={localSearch}
             onChangeText={setLocalSearch}
@@ -155,7 +155,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
         <View style={styles.actionRow}>
           <View style={styles.toggleButtons}>
             <TouchableOpacity style={styles.toggleBtn} onPress={expandAll}>
-              <Text style={styles.toggleBtnText}>Expand All</Text>
+              <Text style={styles.toggleBtnText}>Expand</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.toggleBtn} onPress={collapseAll}>
               <Text style={styles.toggleBtnText}>Collapse</Text>
@@ -175,7 +175,7 @@ export const ArchitectureSectionsScreen: React.FC = () => {
             }}
           >
             <Text style={styles.sortBtnText}>
-              Sort: {sortField === 'updated_at' ? 'Date ▾' : sortField === 'display_id' ? 'ID ▾' : 'Name ▾'}
+              Sort: {sortField === 'updated_at' ? 'Date' : sortField === 'display_id' ? 'ID' : 'Name'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -184,14 +184,14 @@ export const ArchitectureSectionsScreen: React.FC = () => {
       {/* Main Sections Scroll View */}
       {isLoading && nodes.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME.accent} />
-          <Text style={styles.loadingText}>Loading architecture layers...</Text>
+          <ActivityIndicator size="small" color={THEME.accent} />
+          <Text style={styles.loadingText}>Loading architecture...</Text>
         </View>
       ) : processedNodes.length === 0 ? (
         <EmptyState
           icon="🔍"
           title="No Nodes Found"
-          description="Try adjusting your filter or create a new architecture node"
+          description="Adjust your filter or create a new node"
           actionText="＋ Create Node"
           onAction={openCreateNodeModal}
         />
@@ -216,16 +216,9 @@ export const ArchitectureSectionsScreen: React.FC = () => {
                   onPress={() => toggleCategory(cat.type)}
                 >
                   <View style={styles.sectionHeaderLeft}>
-                    <View
-                      style={[
-                        styles.catIconBox,
-                        { backgroundColor: `${cat.color}20`, borderColor: `${cat.color}40` },
-                      ]}
-                    >
-                      <Text style={[styles.catIcon, { color: cat.color }]}>{cat.icon}</Text>
-                    </View>
+                    <Text style={[styles.catIcon, { color: cat.color }]}>{cat.icon}</Text>
                     <Text style={styles.sectionTitle}>{cat.title}</Text>
-                    <View style={[styles.countBadge, { backgroundColor: `${cat.color}15` }]}>
+                    <View style={styles.countBadge}>
                       <Text style={[styles.countText, { color: cat.color }]}>
                         {catNodes.length}
                       </Text>
@@ -256,14 +249,13 @@ export const ArchitectureSectionsScreen: React.FC = () => {
         </ScrollView>
       )}
 
-      {/* Floating Action Button */}
+      {/* Sleek Floating Action Button */}
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.8}
         onPress={openCreateNodeModal}
       >
         <Text style={styles.fabIcon}>＋</Text>
-        <Text style={styles.fabText}>New Node</Text>
       </TouchableOpacity>
     </View>
   );
@@ -275,36 +267,36 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.bg,
   },
   controlBar: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: THEME.surface1,
     borderBottomWidth: 1,
     borderBottomColor: THEME.border,
-    gap: 8,
+    gap: 6,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: THEME.surface2,
-    borderRadius: THEME.radius.md,
-    paddingHorizontal: 10,
-    height: 36,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    height: 32,
     borderWidth: 1,
     borderColor: THEME.border,
   },
   searchIcon: {
-    fontSize: 12,
+    fontSize: 11,
     marginRight: 6,
-    opacity: 0.7,
+    opacity: 0.6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 11.5,
     color: THEME.text1,
     paddingVertical: 0,
   },
   clearIcon: {
-    fontSize: 12,
+    fontSize: 11,
     color: THEME.text3,
     paddingHorizontal: 4,
   },
@@ -315,24 +307,26 @@ const styles = StyleSheet.create({
   },
   toggleButtons: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 4,
   },
   toggleBtn: {
-    backgroundColor: THEME.surface3,
-    paddingHorizontal: 8,
+    backgroundColor: THEME.surface2,
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: THEME.border,
   },
   toggleBtnText: {
     fontSize: 10,
     color: THEME.text3,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   sortBtn: {
-    backgroundColor: THEME.surface3,
-    paddingHorizontal: 8,
+    backgroundColor: THEME.surface2,
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: THEME.border,
   },
@@ -346,108 +340,91 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 14,
-    paddingBottom: 90,
-    gap: 14,
+    padding: 10,
+    paddingBottom: 80,
+    gap: 8,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 8,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 12,
     color: THEME.text3,
   },
   sectionCard: {
     backgroundColor: THEME.surface1,
-    borderRadius: THEME.radius.lg,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: THEME.border2,
+    borderColor: THEME.border,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: THEME.surface2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: THEME.surface1,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   sectionHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     flex: 1,
   },
-  catIconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   catIcon: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     color: THEME.text1,
   },
   countBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: THEME.radius.pill,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 3,
+    backgroundColor: THEME.surface3,
   },
   countText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontFamily: 'monospace',
     fontWeight: '700',
   },
   chevron: {
-    fontSize: 16,
-    color: THEME.text3,
+    fontSize: 12,
+    color: THEME.text4,
   },
   nodesList: {
-    padding: 10,
-    gap: 10,
+    padding: 8,
+    gap: 6,
   },
   fab: {
     position: 'absolute',
-    bottom: 18,
-    right: 18,
+    bottom: 16,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: THEME.accent,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: THEME.radius.pill,
+    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 6,
   },
   fabIcon: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '600',
     color: '#000',
-  },
-  fabText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#000',
+    marginTop: -2,
   },
 });
