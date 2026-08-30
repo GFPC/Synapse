@@ -20,6 +20,7 @@ export const SettingsScreen: React.FC = () => {
     serverStatus,
     serverLatencyMs,
     checkServerHealth,
+    switchTab,
   } = useSynapseMobileStore();
 
   const [apiUrl, setApiUrl] = useState(settings.apiBaseUrl);
@@ -40,6 +41,31 @@ export const SettingsScreen: React.FC = () => {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* SECTION 0: User Profile & Cabinet Banner */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.sectionTitle}>ARCHITECT ACCOUNT</Text>
+          <TouchableOpacity onPress={() => switchTab('account')}>
+            <Text style={styles.headerAction}>View Cabinet →</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={styles.profileRow}
+          activeOpacity={0.75}
+          onPress={() => switchTab('account')}
+        >
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>LA</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.profileName}>Lead System Architect</Text>
+            <Text style={styles.profileEmail}>architect@synapse.local • Role: Owner</Text>
+          </View>
+          <Text style={styles.profileChevron}>›</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* SECTION 1: Production Server & Gateway */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -269,6 +295,44 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     color: THEME.accentBright,
     fontWeight: '600',
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: THEME.surface2,
+    borderRadius: THEME.radius.md,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  profileAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: THEME.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileAvatarText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#000',
+  },
+  profileName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: THEME.text1,
+  },
+  profileEmail: {
+    fontSize: 10.5,
+    color: THEME.text3,
+    marginTop: 1,
+  },
+  profileChevron: {
+    fontSize: 18,
+    color: THEME.text4,
+    marginRight: 4,
   },
   fieldGroup: {
     gap: 5,
