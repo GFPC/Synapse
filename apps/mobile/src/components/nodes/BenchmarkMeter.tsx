@@ -79,7 +79,14 @@ export const BenchmarkMeter: React.FC<Props> = ({ meta }) => {
     });
 
     // Also pick up any custom key-values in meta that weren't in knownKeys
-    const knownSet = new Set(knownKeys.map((k) => k.key));
+    const knownSet = new Set([
+      ...knownKeys.map((k) => k.key),
+      // Exclude meta-control keys that are not displayable metrics
+      'benchmark_type',
+      'env',
+      'gauge_pct',
+      'status',
+    ]);
     Object.keys(meta).forEach((k) => {
       if (!knownSet.has(k) && typeof meta[k] !== 'object' && meta[k] !== '') {
         metrics.push({

@@ -19,6 +19,15 @@ export interface ApiError {
 class MobileApiClient {
   private token: string | null = null;
   private refreshToken: string | null = null;
+  private baseUrl: string = API_BASE_URL;
+
+  public setBaseUrl(url: string) {
+    this.baseUrl = url.replace(/\/$/, ''); // strip trailing slash
+  }
+
+  public getBaseUrl(): string {
+    return this.baseUrl;
+  }
 
   public setTokens(access: string, refresh: string) {
     this.token = access;
@@ -38,7 +47,7 @@ class MobileApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
     const headers = new Headers(options.headers || {});
 
     if (this.token && !headers.has('Authorization')) {

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
 import { THEME } from '../theme/tokens';
+import { mobileApiClient } from '../api/client';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -26,8 +27,10 @@ export const SettingsScreen: React.FC = () => {
   const [apiUrl, setApiUrl] = useState(settings.apiBaseUrl);
 
   const handleSaveApiUrl = () => {
-    updateSettings({ apiBaseUrl: apiUrl.trim() });
-    Alert.alert('Settings Saved', `API Base URL updated to ${apiUrl.trim()}`);
+    const trimmed = apiUrl.trim();
+    updateSettings({ apiBaseUrl: trimmed });
+    mobileApiClient.setBaseUrl(trimmed);
+    Alert.alert('Settings Saved', `API Base URL updated to ${trimmed}. Reconnect to apply.`);
   };
 
   const handleClearCache = async () => {

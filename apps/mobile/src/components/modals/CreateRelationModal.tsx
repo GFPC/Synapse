@@ -38,6 +38,10 @@ export const CreateRelationModal: React.FC<Props> = ({ visible, onClose }) => {
     setIsSubmitting(true);
     await createRelation(relationSourceNode.id, selectedTargetId, selectedType, note.trim());
     setIsSubmitting(false);
+    // Reset form state before closing so next open is fresh
+    setSelectedTargetId('');
+    setNote('');
+    setSelectedType('depends_on');
     onClose();
   };
 

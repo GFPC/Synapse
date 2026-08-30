@@ -157,6 +157,30 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
       setErrorRate(meta.error_rate || '');
       setPacketLoss(meta.packet_loss || '');
       setAvailability(meta.availability || '');
+
+      // Restore custom metric: find any key that isn't in standard known keys
+      const standardKeys = new Set([
+        'benchmark_type', 'p50_latency_ms', 'p99_latency_ms', 'latency', 'slo_target',
+        'throughput', 'ops_sec', 'tps', 'concurrency', 'memory_mb', 'peak_ram_mb',
+        'cpu_usage_pct', 'gc_pause_ms', 'error_rate', 'packet_loss', 'availability',
+        'env', 'gauge_pct', 'status',
+      ]);
+      const customEntry = Object.entries(meta).find(([k]) => !standardKeys.has(k));
+      if (customEntry) {
+        const [key, rawVal] = customEntry;
+        const strVal = String(rawVal);
+        // Try to split off the unit (last token separated by space)
+        const parts = strVal.trim().split(/\s+/);
+        const unit = parts.length > 1 ? parts[parts.length - 1] : '';
+        const value = parts.length > 1 ? parts.slice(0, -1).join(' ') : strVal;
+        setCustomKey(key.replace(/_/g, ' '));
+        setCustomVal(value);
+        setCustomUnit(unit);
+      } else {
+        setCustomKey('');
+        setCustomVal('');
+        setCustomUnit('');
+      }
     }
   }, [visible, node?.id, nodeModalMode]);
 

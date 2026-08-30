@@ -9,9 +9,10 @@ import {
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
 import { THEME } from '../theme/tokens';
+import { mobileApiClient } from '../api/client';
 
 export const AccountScreen: React.FC = () => {
-  const { currentUser, userStats, isConnected, serverLatencyMs } = useSynapseMobileStore();
+  const { currentUser, userStats, isConnected, serverLatencyMs, clearLocalCache, init } = useSynapseMobileStore();
 
   const userInitials = currentUser?.name
     ? currentUser.name
@@ -29,7 +30,15 @@ export const AccountScreen: React.FC = () => {
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out from Synapse Mobile?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          mobileApiClient.clearTokens();
+          await clearLocalCache();
+          await init(); // Re-initialize / re-login
+        },
+      },
     ]);
   };
 

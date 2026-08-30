@@ -21,6 +21,14 @@ export const MetricsAdrScreen: React.FC = () => {
   const benchmarkNodes = nodes.filter((n: SynapseNode) => n.type === 'benchmark' || n.type === 'test');
   const riskNodes = nodes.filter((n: SynapseNode) => n.type === 'risk' || n.type === 'problem');
 
+  // Unique total: use a Set of node IDs across all three lists
+  const allMetricIds = new Set([
+    ...adrNodes.map((n: SynapseNode) => n.id),
+    ...benchmarkNodes.map((n: SynapseNode) => n.id),
+    ...riskNodes.map((n: SynapseNode) => n.id),
+  ]);
+  const allMetricsCount = allMetricIds.size;
+
   return (
     <View style={styles.container}>
       {/* Top Segmented Selector */}
@@ -35,7 +43,7 @@ export const MetricsAdrScreen: React.FC = () => {
             onPress={() => setActiveTab('all')}
           >
             <Text style={[styles.segmentText, activeTab === 'all' && styles.segmentTextActive]}>
-              All Metrics ({adrNodes.length + benchmarkNodes.length + riskNodes.length})
+              All Metrics ({allMetricsCount})
             </Text>
           </TouchableOpacity>
 
@@ -160,7 +168,13 @@ export const MetricsAdrScreen: React.FC = () => {
                   >
                     <View style={styles.benchTopRow}>
                       <Text style={styles.benchDisplayId}>[{node.display_id}]</Text>
-                      <Text style={styles.benchTypeTag}>SLO METRIC</Text>
+                      <Text style={styles.benchTypeTag}>
+                        {node.meta?.benchmark_type
+                          ? String(node.meta.benchmark_type).toUpperCase()
+                          : node.type === 'test'
+                          ? 'TEST CASE'
+                          : 'BENCHMARK'}
+                      </Text>
                     </View>
                     <Text style={styles.benchTitle}>{node.title}</Text>
                     <BenchmarkMeter meta={node.meta} />

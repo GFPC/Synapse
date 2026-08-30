@@ -54,7 +54,8 @@ export const SectionNodeCard: React.FC<Props> = ({
       style={styles.card}
       activeOpacity={0.75}
       onPress={onPress}
-      onLongPress={onDoublePress || onAddRelation}
+      onLongPress={onAddRelation}
+      delayLongPress={450}
     >
       {/* Top Meta Line: ID, Type Label, Status */}
       <View style={styles.topRow}>
@@ -130,11 +131,7 @@ export const SectionNodeCard: React.FC<Props> = ({
                 <Text style={styles.tagText}>#{tag}</Text>
               </View>
             ))
-          ) : (
-            <View style={styles.tagPill}>
-              <Text style={styles.tagText}>#system</Text>
-            </View>
-          )}
+          ) : null}
         </View>
 
         <Text style={styles.authorText}>{authorInitials}</Text>

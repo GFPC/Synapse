@@ -123,7 +123,7 @@ export const NODE_TYPE_CONFIG: Record<NodeType, NodeTypeConfig> = {
     bg: 'rgba(34, 197, 94, 0.14)',
     border: 'rgba(34, 197, 94, 0.38)',
     label: 'Deployment',
-    prefix: 'M',
+    prefix: 'D',
     iconText: '▲',
   },
   lesson: {

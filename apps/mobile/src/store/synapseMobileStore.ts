@@ -274,9 +274,9 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
         isLoading: false,
       });
 
-      // Fetch all relations in parallel
+      // Fetch relations for up to 100 nodes in parallel (API deduplicates shared edges)
       if (nodes.length > 0) {
-        const promises = nodes.slice(0, 30).map((node) => nodesApi.getRelations(node.id));
+        const promises = nodes.slice(0, 100).map((node) => nodesApi.getRelations(node.id));
         const results = await Promise.all(promises);
         const allRelations = results.flat();
         const uniqueRelations = Array.from(
