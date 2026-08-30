@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import { SynapseNode, NodeRelation } from '../../types';
 import { MobileNodeCard } from '../nodes/MobileNodeCard';
+import { RelationEdges } from './RelationEdges';
+import { CanvasMinimap } from './CanvasMinimap';
 import { THEME } from '../../theme/tokens';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -22,6 +24,7 @@ interface Props {
 
 export const InfiniteCanvas: React.FC<Props> = ({
   nodes,
+  relations = [],
   selectedNodeId,
   scale = 1.0,
   onSelectNode,
@@ -29,14 +32,14 @@ export const InfiniteCanvas: React.FC<Props> = ({
   const [pan, setPan] = useState({ x: 24, y: 40 });
   const lastPanRef = useRef({ x: 24, y: 40 });
 
-  // Center on first node when loaded
+  // Auto-center camera on the active node cluster
   useEffect(() => {
     if (nodes.length > 0) {
       const minX = Math.min(...nodes.map((n) => n.canvas_x || 0));
       const minY = Math.min(...nodes.map((n) => n.canvas_y || 0));
       const initialPan = {
-        x: Math.max(20, 40 - minX),
-        y: Math.max(20, 40 - minY),
+        x: Math.max(20, 36 - minX),
+        y: Math.max(20, 36 - minY),
       };
       setPan(initialPan);
       lastPanRef.current = initialPan;
@@ -69,7 +72,7 @@ export const InfiniteCanvas: React.FC<Props> = ({
       {/* Background Dot Matrix Grid */}
       <View style={styles.gridOverlay} pointerEvents="none" />
 
-      {/* Canvas Transform View */}
+      {/* Canvas Transform Layer */}
       <View
         style={[
           styles.canvasArea,
@@ -82,6 +85,13 @@ export const InfiniteCanvas: React.FC<Props> = ({
           },
         ]}
       >
+        {/* Render Directed SVG Relation Curves */}
+        <RelationEdges
+          nodes={nodes}
+          relations={relations}
+          selectedNodeId={selectedNodeId}
+        />
+
         {/* Render Node Cards */}
         {nodes.map((node) => {
           const x = node.canvas_x || 0;
@@ -108,6 +118,9 @@ export const InfiniteCanvas: React.FC<Props> = ({
           );
         })}
       </View>
+
+      {/* Translucent Minimap in top-right */}
+      <CanvasMinimap nodes={nodes} pan={pan} scale={scale} />
     </View>
   );
 };

@@ -1,4 +1,4 @@
-import { NodeType } from '../types';
+import { NodeType, RelationType } from '../types';
 
 export const THEME = {
   // Ground & Surfaces
@@ -158,4 +158,22 @@ export const NODE_TYPE_CONFIG: Record<NodeType, NodeTypeConfig> = {
     prefix: 'G',
     iconText: '⏱',
   },
+};
+
+export interface RelationConfig {
+  color: string;
+  label: string;
+  dashed?: boolean;
+}
+
+export const RELATION_CONFIG: Record<RelationType, RelationConfig> = {
+  depends_on: { color: '#818CF8', label: 'depends on' },
+  implements: { color: '#10B981', label: 'implements' },
+  validates: { color: '#06B6D4', label: 'validates' },
+  derives_from: { color: '#F59E0B', label: 'derives from' },
+  caused_by: { color: '#EF4444', label: 'caused by' },
+  contradicts: { color: '#EC4899', label: 'contradicts', dashed: true },
+  supersedes: { color: '#8B5CF6', label: 'supersedes' },
+  references: { color: '#94A3B8', label: 'references', dashed: true },
+  related: { color: '#71717A', label: 'related' },
 };

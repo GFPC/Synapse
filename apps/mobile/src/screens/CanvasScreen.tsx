@@ -14,6 +14,7 @@ import { useSynapseMobileStore } from '../store/synapseMobileStore';
 import { InfiniteCanvas } from '../components/canvas/InfiniteCanvas';
 import { NodeDetailModal } from '../components/drawer/NodeDetailModal';
 import { SearchModal } from '../components/modals/SearchModal';
+import { CreateNodeModal } from '../components/modals/CreateNodeModal';
 import { CanvasHUD } from '../components/layout/CanvasHUD';
 import { NodeType } from '../types';
 import { THEME } from '../theme/tokens';
@@ -36,6 +37,7 @@ export const CanvasScreen: React.FC = () => {
     isLoading,
     isConnected,
     nodes,
+    relations,
     projects,
     activeProject,
     selectProject,
@@ -49,6 +51,7 @@ export const CanvasScreen: React.FC = () => {
 
   const [zoomScale, setZoomScale] = useState(1.0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
 
   useEffect(() => {
@@ -91,6 +94,15 @@ export const CanvasScreen: React.FC = () => {
         </TouchableOpacity>
 
         <View style={styles.headerRight}>
+          {/* Quick Create Node Button */}
+          <TouchableOpacity
+            style={styles.createBtn}
+            onPress={() => setIsCreateOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.createBtnText}>＋ Узел</Text>
+          </TouchableOpacity>
+
           {/* Status Indicator */}
           <View
             style={[
@@ -113,7 +125,7 @@ export const CanvasScreen: React.FC = () => {
                 { color: isConnected ? '#86EFAC' : '#FCD34D' },
               ]}
             >
-              {isConnected ? 'API Online' : 'Connecting'}
+              {isConnected ? 'Live' : 'Sync'}
             </Text>
           </View>
 
@@ -167,6 +179,7 @@ export const CanvasScreen: React.FC = () => {
         ) : (
           <InfiniteCanvas
             nodes={filteredNodes}
+            relations={relations}
             selectedNodeId={selectedNodeId}
             scale={zoomScale}
             onSelectNode={selectNode}
@@ -191,6 +204,12 @@ export const CanvasScreen: React.FC = () => {
         visible={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectNode={(nodeId) => selectNode(nodeId)}
+      />
+
+      {/* Create Node Modal */}
+      <CreateNodeModal
+        visible={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
       />
 
       {/* Node Detail Drawer / Bottom Sheet */}
@@ -258,7 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     backgroundColor: THEME.surface1,
     borderBottomWidth: 1,
@@ -267,19 +286,19 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flex: 1,
   },
   logoBadge: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: 8,
     backgroundColor: THEME.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoText: {
-    fontSize: 16,
+    fontSize: 15,
   },
   brandRow: {
     flexDirection: 'row',
@@ -287,13 +306,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   appName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: THEME.text1,
   },
   versionBadge: {
     fontFamily: 'monospace',
-    fontSize: 9,
+    fontSize: 8,
     color: THEME.text4,
     backgroundColor: THEME.surface2,
     paddingHorizontal: 4,
@@ -306,48 +325,61 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   projectName: {
-    fontSize: 11,
+    fontSize: 10,
     color: THEME.text2,
     fontWeight: '600',
-    maxWidth: 160,
+    maxWidth: 130,
   },
   pickerChevron: {
-    fontSize: 12,
+    fontSize: 10,
     color: THEME.accentBright,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  createBtn: {
+    backgroundColor: THEME.surface3,
+    borderWidth: 1,
+    borderColor: THEME.border2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: THEME.radius.pill,
+  },
+  createBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: THEME.accentBright,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: THEME.radius.pill,
     borderWidth: 1,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   statusText: {
     fontFamily: 'monospace',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
   searchIconBtn: {
     backgroundColor: THEME.surface2,
-    padding: 7,
+    padding: 6,
     borderRadius: THEME.radius.pill,
     borderWidth: 1,
     borderColor: THEME.border,
   },
   searchIconText: {
-    fontSize: 12,
+    fontSize: 11,
   },
   filterBar: {
     backgroundColor: THEME.surface1,

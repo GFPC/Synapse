@@ -1,23 +1,19 @@
 import { create } from 'zustand';
-import { SynapseNode, NodeRelation, Project, User, NodeType } from '../types';
+import { SynapseNode, NodeRelation, NodeType, User, Project } from '../types';
 import { mobileApiClient } from '../api/client';
+import { synapseWS, WSEvent } from '../api/ws';
 import { synapseCore } from '../native/SynapseCore';
 
 interface SynapseMobileState {
-  // Connection & Auth
   isConnected: boolean;
   isLoading: boolean;
   currentUser: User | null;
-  
-  // Projects & Data
   projects: Project[];
   activeProject: Project | null;
   nodes: SynapseNode[];
-  visibleNodeIds: string[];
   relations: NodeRelation[];
+  visibleNodeIds: string[];
   selectedNodeId: string | null;
-
-  // Filters & Views
   viewMode: 'canvas' | 'sections';
   activeTypeFilter: NodeType | 'all';
   searchQuery: string;
@@ -33,134 +29,185 @@ interface SynapseMobileState {
   setTypeFilter: (filter: NodeType | 'all') => void;
   setSearchQuery: (q: string) => void;
   updateNodePosition: (nodeId: string, x: number, y: number) => Promise<void>;
-  applyAutoLayout: (type?: 'hierarchical' | 'force') => Promise<void>;
+  applyAutoLayout: (type: 'hierarchical' | 'force') => void;
 }
 
-export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
-  isConnected: false,
-  isLoading: false,
-  currentUser: {
-    id: 'user-1',
-    name: 'Lead Architect',
-    email: 'architect@synapse.local',
-    created_at: Date.now(),
-  },
-  projects: [],
-  activeProject: null,
-  nodes: [],
-  visibleNodeIds: [],
-  relations: [],
-  selectedNodeId: null,
-  viewMode: 'canvas',
-  activeTypeFilter: 'all',
-  searchQuery: '',
+export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => {
+  return {
+    isConnected: false,
+    isLoading: false,
+    currentUser: {
+      id: 'user-1',
+      name: 'Lead Architect',
+      email: 'architect@synapse.local',
+      created_at: Date.now(),
+    },
+    projects: [],
+    activeProject: null,
+    nodes: [],
+    relations: [],
+    visibleNodeIds: [],
+    selectedNodeId: null,
+    viewMode: 'canvas',
+    activeTypeFilter: 'all',
+    searchQuery: '',
 
-  init: async () => {
-    set({ isLoading: true });
-    try {
-      // Auto login as default architect
-      const loginRes = await mobileApiClient.post('/api/auth/login', {
-        email: 'architect@synapse.local',
-        password: 'password123',
-      });
-      if (loginRes.data?.tokens) {
-        mobileApiClient.setTokens(loginRes.data.tokens.access_token, loginRes.data.tokens.refresh_token);
-        set({ currentUser: loginRes.data.user, isConnected: true });
+    init: async () => {
+      set({ isLoading: true });
+      try {
+        const loginRes = await mobileApiClient.post('/api/auth/login', {
+          email: 'architect@synapse.local',
+          password: 'password123',
+        });
+        const loginData = loginRes.data?.data || loginRes.data;
+        if (loginData?.tokens) {
+          const accessToken = loginData.tokens.access_token;
+          mobileApiClient.setTokens(accessToken, loginData.tokens.refresh_token);
+          set({ currentUser: loginData.user, isConnected: true });
+        }
+        await get().fetchProjects();
+      } catch {
+        set({ isConnected: false });
+      } finally {
+        set({ isLoading: false });
       }
-      await get().fetchProjects();
-    } catch {
-      set({ isConnected: false });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+    },
 
-  fetchProjects: async () => {
-    try {
-      const res = await mobileApiClient.get<any>('/api/projects');
-      const raw = res.data;
-      const projects: Project[] = Array.isArray(raw)
-        ? raw
-        : raw?.data || raw?.projects || [];
-      set({ projects });
-      if (projects.length > 0 && !get().activeProject) {
-        // Pick project with nodes or the latest one
-        await get().selectProject(projects[0].id);
+    fetchProjects: async () => {
+      try {
+        const res = await mobileApiClient.get<any>('/api/projects');
+        const raw = res.data;
+        const projects: Project[] = Array.isArray(raw)
+          ? raw
+          : raw?.data || raw?.projects || [];
+        set({ projects });
+        if (projects.length > 0 && !get().activeProject) {
+          // Find first project with nodes
+          await get().selectProject(projects[0].id);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch projects', e);
       }
-    } catch (e) {
-      console.warn('Failed to fetch projects', e);
-    }
-  },
+    },
 
-  selectProject: async (projectId: string) => {
-    const proj = get().projects.find((p) => p.id === projectId) || null;
-    set({ activeProject: proj });
-    await get().fetchNodesAndRelations(projectId);
-  },
+    selectProject: async (projectId: string) => {
+      const proj = get().projects.find((p) => p.id === projectId) || null;
+      set({ activeProject: proj });
+      await get().fetchNodesAndRelations(projectId);
 
-  fetchNodesAndRelations: async (projectId: string) => {
-    set({ isLoading: true });
-    try {
-      const res = await mobileApiClient.get<any>(`/api/projects/${projectId}/nodes`);
-      const raw = res.data;
-      const nodes: SynapseNode[] = Array.isArray(raw)
-        ? raw
-        : raw?.data || raw?.nodes || [];
-      
-      synapseCore.updateSpatialIndex(nodes);
-      set({
-        nodes,
-        visibleNodeIds: nodes.map((n: SynapseNode) => n.id),
+      // Connect to Live WS
+      const token = (mobileApiClient as any).accessToken;
+      if (token) {
+        synapseWS.connect(token, projectId);
+        synapseWS.subscribe((event: WSEvent) => {
+          if (event.type === 'node_created' && event.data) {
+            const newNode = event.data;
+            set((s) => ({ nodes: [...s.nodes, newNode] }));
+          } else if (event.type === 'node_updated' && event.data) {
+            const updated = event.data;
+            set((s) => ({
+              nodes: s.nodes.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)),
+            }));
+          } else if (event.type === 'node_deleted' && event.data) {
+            const delId = event.data.id || event.data;
+            set((s) => ({ nodes: s.nodes.filter((n) => n.id !== delId) }));
+          }
+        });
+      }
+    },
+
+    fetchNodesAndRelations: async (projectId: string) => {
+      set({ isLoading: true });
+      try {
+        const res = await mobileApiClient.get<any>(`/api/projects/${projectId}/nodes`);
+        const raw = res.data;
+        const nodes: SynapseNode[] = Array.isArray(raw)
+          ? raw
+          : raw?.data || raw?.nodes || [];
+
+        synapseCore.updateSpatialIndex(nodes);
+
+        // Fetch relations for nodes
+        const allRelations: NodeRelation[] = [];
+        for (const node of nodes.slice(0, 15)) {
+          try {
+            const relRes = await mobileApiClient.get<any>(`/api/nodes/${node.id}/relations`);
+            const relData = relRes.data?.data || relRes.data || [];
+            if (Array.isArray(relData)) {
+              allRelations.push(...relData);
+            }
+          } catch {
+            // Ignore per-node relation errors
+          }
+        }
+
+        // Deduplicate relations
+        const uniqueRelations = Array.from(
+          new Map(allRelations.map((r) => [r.id, r])).values()
+        );
+
+        set({
+          nodes,
+          relations: uniqueRelations,
+          visibleNodeIds: nodes.map((n: SynapseNode) => n.id),
+        });
+      } catch (e) {
+        console.warn('Failed to fetch nodes', e);
+      } finally {
+        set({ isLoading: false });
+      }
+    },
+
+    updateVisibleNodes: (viewport: { minX: number; minY: number; maxX: number; maxY: number }) => {
+      const visibleIds = synapseCore.queryVisibleNodeIds(viewport);
+      set({ visibleNodeIds: visibleIds });
+    },
+
+    selectNode: (nodeId: string | null) => set({ selectedNodeId: nodeId }),
+    setViewMode: (mode: 'canvas' | 'sections') => set({ viewMode: mode }),
+    setTypeFilter: (filter: NodeType | 'all') => set({ activeTypeFilter: filter }),
+    setSearchQuery: (q: string) => set({ searchQuery: q }),
+
+    updateNodePosition: async (nodeId: string, x: number, y: number) => {
+      set((state) => ({
+        nodes: state.nodes.map((n) =>
+          n.id === nodeId ? { ...n, canvas_x: x, canvas_y: y } : n
+        ),
+      }));
+
+      try {
+        await mobileApiClient.patch(`/api/nodes/${nodeId}/canvas`, {
+          canvas_x: x,
+          canvas_y: y,
+        });
+      } catch {
+        // Fallback
+      }
+    },
+
+    applyAutoLayout: (type: 'hierarchical' | 'force') => {
+      const { nodes, relations } = get();
+      if (nodes.length === 0) return;
+
+      const layoutPositions = synapseCore.computeAutoLayout(nodes, relations, type);
+      const posMap = new Map(layoutPositions.map((p) => [p.id, p]));
+
+      const layoutedNodes = nodes.map((n) => {
+        const p = posMap.get(n.id);
+        return p ? { ...n, canvas_x: p.x, canvas_y: p.y } : n;
       });
-    } catch (e) {
-      console.warn('Failed to fetch nodes', e);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
 
-  updateVisibleNodes: (viewport: { minX: number; minY: number; maxX: number; maxY: number }) => {
-    const visibleIds = synapseCore.queryVisibleNodeIds(viewport);
-    set({ visibleNodeIds: visibleIds });
-  },
+      set({ nodes: layoutedNodes });
 
-  selectNode: (nodeId: string | null) => set({ selectedNodeId: nodeId }),
-  setViewMode: (mode: 'canvas' | 'sections') => set({ viewMode: mode }),
-  setTypeFilter: (filter: NodeType | 'all') => set({ activeTypeFilter: filter }),
-  setSearchQuery: (q: string) => set({ searchQuery: q }),
-
-  updateNodePosition: async (nodeId: string, x: number, y: number) => {
-    const nodes = get().nodes.map((n: SynapseNode) => (n.id === nodeId ? { ...n, canvas_x: x, canvas_y: y } : n));
-    set({ nodes });
-    synapseCore.updateSpatialIndex(nodes);
-
-    try {
-      await mobileApiClient.patch(`/api/nodes/${nodeId}/canvas`, {
-        canvas_x: x,
-        canvas_y: y,
+      // Save new coordinates to backend in parallel
+      layoutedNodes.forEach((n: SynapseNode) => {
+        mobileApiClient
+          .patch(`/api/nodes/${n.id}/canvas`, {
+            canvas_x: n.canvas_x,
+            canvas_y: n.canvas_y,
+          })
+          .catch(() => {});
       });
-    } catch (e) {
-      console.warn('Failed to update node canvas position', e);
-    }
-  },
-
-  applyAutoLayout: async (type = 'hierarchical') => {
-    const { nodes, relations } = get();
-    const layout = synapseCore.computeAutoLayout(nodes, relations, type);
-    const updated = nodes.map((n) => {
-      const pos = layout.find((l) => l.id === n.id);
-      return pos ? { ...n, canvas_x: pos.x, canvas_y: pos.y } : n;
-    });
-
-    set({ nodes: updated });
-    synapseCore.updateSpatialIndex(updated);
-
-    // Persist batch
-    for (const pos of layout) {
-      mobileApiClient.patch(`/api/nodes/${pos.id}/canvas`, {
-        canvas_x: pos.x,
-        canvas_y: pos.y,
-      }).catch(() => {});
-    }
-  },
-}));
+    },
+  };
+});
