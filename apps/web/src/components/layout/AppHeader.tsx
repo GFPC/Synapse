@@ -12,6 +12,8 @@ import {
   ChevronDown,
   FolderOpen,
   Server,
+  Lightbulb,
+  ClipboardPaste,
 } from 'lucide-react';
 
 interface AppHeaderProps {
@@ -182,24 +184,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </button>
         <button
           onClick={() => setCurrentScreen('ideas')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
             currentScreen === 'ideas'
               ? 'bg-surface-2 text-amber-400 font-bold'
               : 'text-text-muted hover:text-text-main'
           }`}
         >
-          <span>💡</span>
+          <Lightbulb className="w-3.5 h-3.5" />
           <span>Идеи & Заметки</span>
         </button>
         <button
           onClick={() => setCurrentScreen('quick-drop')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
             currentScreen === 'quick-drop'
               ? 'bg-surface-2 text-indigo-400 font-bold'
               : 'text-text-muted hover:text-text-main'
           }`}
         >
-          <span>📋</span>
+          <ClipboardPaste className="w-3.5 h-3.5" />
           <span>Quick Drop (Ctrl+V)</span>
         </button>
         <button

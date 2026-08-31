@@ -162,7 +162,7 @@ export const IdeasScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#09090B" />
 
       {/* Header */}
@@ -291,7 +291,7 @@ export const IdeasScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

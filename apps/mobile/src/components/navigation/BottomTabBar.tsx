@@ -5,6 +5,8 @@ import { THEME } from '../../theme/tokens';
 import {
   SectionsNavIcon,
   RelationsNavIcon,
+  QuickDropNavIcon,
+  IdeasNavIcon,
   MetricsNavIcon,
   SearchNavIcon,
   SettingsNavIcon,
@@ -43,12 +45,12 @@ export const BottomTabBar: React.FC<Props> = ({
     {
       id: 'quickdrop',
       label: 'Quick Drop',
-      renderIcon: () => <Text style={{ fontSize: 16 }}>📋</Text>,
+      renderIcon: (p) => <QuickDropNavIcon {...p} />,
     },
     {
       id: 'ideas',
       label: 'Ideas',
-      renderIcon: () => <Text style={{ fontSize: 16 }}>💡</Text>,
+      renderIcon: (p) => <IdeasNavIcon {...p} />,
     },
     {
       id: 'metrics',
@@ -107,8 +109,8 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.surface1,
     borderTopWidth: 1,
     borderTopColor: THEME.border,
-    paddingBottom: 6,
-    paddingTop: 4,
+    paddingBottom: 16,
+    paddingTop: 6,
   },
   tabBar: {
     flexDirection: 'row',
