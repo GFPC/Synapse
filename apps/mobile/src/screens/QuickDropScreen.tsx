@@ -211,7 +211,7 @@ export const QuickDropScreen: React.FC = () => {
             onPress={() => handleCopy(item.id, item.content)}
           >
             <Text style={[styles.copyBtnText, isCopied && styles.copyBtnTextSuccess]}>
-              {isCopied ? '✓ Copied!' : '📋 Copy'}
+              {isCopied ? 'Copied' : 'Copy'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -225,23 +225,20 @@ export const QuickDropScreen: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Universal Quick Drop</Text>
-          <Text style={styles.headerSubtitle}>Instant Clipboard & Photo Sharing</Text>
-        </View>
+        <Text style={styles.headerTitle}>Quick Drop</Text>
         <View style={styles.liveBadge}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>PC ↔ Phone Live</Text>
+          <Text style={styles.liveText}>Live</Text>
         </View>
       </View>
 
       {/* Quick Action Bar */}
       <View style={styles.quickBar}>
         <TouchableOpacity style={styles.quickActionBtn} onPress={handlePasteFromClipboard}>
-          <Text style={styles.quickActionBtnText}>📥 1-Tap Paste Clipboard</Text>
+          <Text style={styles.quickActionBtnText}>Paste</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.quickActionBtn, styles.photoBtn]} onPress={handlePickImage}>
-          <Text style={styles.quickActionBtnText}>📷 Photo</Text>
+          <Text style={styles.photoBtnText}>Attach</Text>
         </TouchableOpacity>
       </View>
 
@@ -251,7 +248,7 @@ export const QuickDropScreen: React.FC = () => {
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Type quick thought or paste text..."
+          placeholder="Text, code, or link..."
           placeholderTextColor="#71717A"
           multiline
         />
@@ -260,15 +257,14 @@ export const QuickDropScreen: React.FC = () => {
           disabled={!inputText.trim()}
           onPress={() => handleCreate()}
         >
-          <Text style={styles.sendBtnText}>Drop ⚡</Text>
+          <Text style={styles.sendBtnText}>Send</Text>
         </TouchableOpacity>
       </View>
 
       {/* Stream Feed */}
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color="#6366F1" size="large" />
-          <Text style={styles.loadingText}>Syncing Quick Drops...</Text>
+          <ActivityIndicator color="#6366F1" size="small" />
         </View>
       ) : (
         <FlatList
@@ -360,6 +356,11 @@ const styles = StyleSheet.create({
   },
   quickActionBtnText: {
     color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  photoBtnText: {
+    color: '#E4E4E7',
     fontSize: 12,
     fontWeight: '600',
   },

@@ -150,10 +150,10 @@ export const IdeasScreen: React.FC = () => {
         <View style={styles.cardFooter}>
           <Text style={styles.dateText}>{new Date(item.created_at).toLocaleDateString()}</Text>
           {isMatured ? (
-            <Text style={styles.promotedText}>✓ Promoted</Text>
+            <Text style={styles.promotedText}>Promoted</Text>
           ) : (
             <TouchableOpacity style={styles.promoteBtn} onPress={() => setPromotingIdea(item)}>
-              <Text style={styles.promoteBtnText}>🚀 Promote</Text>
+              <Text style={styles.promoteBtnText}>Promote</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -167,12 +167,9 @@ export const IdeasScreen: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Free-Ride Notes & Ideas</Text>
-          <Text style={styles.headerSubtitle}>Unstructured Brainstorming</Text>
-        </View>
+        <Text style={styles.headerTitle}>Ideas</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setIsCreating(true)}>
-          <Text style={styles.addBtnText}>＋ New Idea</Text>
+          <Text style={styles.addBtnText}>+ Idea</Text>
         </TouchableOpacity>
       </View>
 
@@ -183,7 +180,7 @@ export const IdeasScreen: React.FC = () => {
           onPress={() => setActiveGroupId(null)}
         >
           <Text style={[styles.groupPillText, activeGroupId === null && styles.groupPillTextActive]}>
-            🌟 All ({ideas.length})
+            All ({ideas.length})
           </Text>
         </TouchableOpacity>
         {groups.map((g) => (
@@ -193,7 +190,7 @@ export const IdeasScreen: React.FC = () => {
             onPress={() => setActiveGroupId(g.id)}
           >
             <Text style={[styles.groupPillText, activeGroupId === g.id && styles.groupPillTextActive]}>
-              {g.icon || '💡'} {g.name}
+              {g.name}
             </Text>
           </TouchableOpacity>
         ))}
