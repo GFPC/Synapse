@@ -166,21 +166,26 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
   init: async () => {
     set({ isLoading: true });
     try {
-      get().initWebSocket();
       await get().checkServerHealth();
-      const loginRes = await mobileApiClient.post('/api/auth/login', {
-        email: 'architect@synapse.local',
-        password: 'password123',
-      });
-      const loginData = loginRes?.data?.tokens
-        ? loginRes.data
-        : (loginRes?.data as any)?.data || loginRes?.data;
 
-      if (loginData?.tokens) {
-        const accessToken = loginData.tokens.access_token;
-        mobileApiClient.setTokens(accessToken, loginData.tokens.refresh_token);
-        set({ currentUser: loginData.user, isConnected: true });
+      const userAccessToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhYmQ1NzMtZmVlMi00MmZmLWFlZTUtNDBjYmM2N2VkYmUzIiwiZW1haWwiOiJhbGV4QHN5bmFwc2UuZGV2IiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc4ODEzNzk1MCwiaWF0IjoxNzg4MTM3MDUwfQ.izLViBbbP4fy8f1GVZyossxUznDr54_NKRtf0UMMo_0';
+      const userRefreshToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhYmQ1NzMtZmVlMi00MmZmLWFlZTUtNDBjYmM2N2VkYmUzIiwiZW1haWwiOiJhbGV4QHN5bmFwc2UuZGV2IiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3ODg2OTk1MjQsImlhdCI6MTc4ODA5NDcyNH0.LQZu2ivvVZIfq_2gFlyWlGcsUekhh364KFm1o5SzwVE';
+
+      mobileApiClient.setTokens(userAccessToken, userRefreshToken);
+
+      try {
+        const meRes = await mobileApiClient.get('/api/auth/me');
+        const userObj = meRes?.data?.data || meRes?.data;
+        if (userObj) {
+          set({ currentUser: userObj, isConnected: true });
+        }
+      } catch {
+        set({ isConnected: true });
       }
+
+      get().initWebSocket();
       await get().fetchProjects();
 
       // Reliable 3-second auto-sync loop
