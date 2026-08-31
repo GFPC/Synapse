@@ -19,8 +19,10 @@ import (
 	"github.com/synapse/api/internal/attachment"
 	"github.com/synapse/api/internal/auth"
 	"github.com/synapse/api/internal/comment"
+	"github.com/synapse/api/internal/idea"
 	"github.com/synapse/api/internal/node"
 	"github.com/synapse/api/internal/project"
+	"github.com/synapse/api/internal/quickdrop"
 	"github.com/synapse/api/internal/search"
 	"github.com/synapse/api/internal/ws"
 	"github.com/synapse/api/pkg/database"
@@ -90,6 +92,8 @@ func main() {
 	nodeRepo       := node.NewRepository(pool)
 	commentRepo    := comment.NewRepository(pool)
 	attachmentRepo := attachment.NewRepository(pool)
+	quickdropRepo  := quickdrop.NewRepository(pool)
+	ideaRepo       := idea.NewRepository(pool)
 
 	// ── 8. Services ───────────────────────────────────────────────────────────
 	authSvc       := auth.NewService(authRepo, auth.Config{
@@ -102,6 +106,8 @@ func main() {
 	commentSvc    := comment.NewService(commentRepo, nodeRepo, hub)
 	attachmentSvc := attachment.NewService(attachmentRepo, nodeRepo, cfg.Upload.Dir, cfg.Upload.MaxSizeMB)
 	searchSvc     := search.NewService(pool)
+	quickdropSvc  := quickdrop.NewService(quickdropRepo, hub, cfg.Upload.Dir)
+	ideaSvc       := idea.NewService(ideaRepo, nodeRepo, hub)
 
 	// ── 9. Handlers ───────────────────────────────────────────────────────────
 	authHandler       := auth.NewHandler(authSvc)
@@ -110,6 +116,8 @@ func main() {
 	commentHandler    := comment.NewHandler(commentSvc)
 	attachmentHandler := attachment.NewHandler(attachmentSvc)
 	searchHandler     := search.NewHandler(searchSvc)
+	quickdropHandler  := quickdrop.NewHandler(quickdropSvc)
+	ideaHandler       := idea.NewHandler(ideaSvc)
 	wsHandler         := ws.NewHandler(hub, cfg.Auth.JWTSecret)
 
 	// ── 10. Echo ──────────────────────────────────────────────────────────────
@@ -150,6 +158,8 @@ func main() {
 	commentHandler.RegisterRoutes(api)
 	attachmentHandler.RegisterRoutes(api)
 	searchHandler.RegisterRoutes(api)
+	quickdropHandler.RegisterRoutes(api)
+	ideaHandler.RegisterRoutes(api)
 
 	// ── 12. Start + Graceful Shutdown ─────────────────────────────────────────
 	go func() {

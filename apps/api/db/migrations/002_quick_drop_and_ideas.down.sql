@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS ideas;
+DROP TABLE IF EXISTS idea_groups;
+DROP TABLE IF EXISTS quick_drops;

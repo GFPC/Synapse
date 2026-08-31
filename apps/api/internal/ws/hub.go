@@ -8,14 +8,20 @@ import (
 type EventType string
 
 const (
-	EventNodeCreated     EventType = "node_created"
-	EventNodeUpdated     EventType = "node_updated"
-	EventNodeDeleted     EventType = "node_deleted"
-	EventRelationCreated EventType = "relation_created"
-	EventCommentAdded    EventType = "comment_added"
-	EventNodeLocked      EventType = "node_locked"
-	EventNodeUnlocked    EventType = "node_unlocked"
-	EventUserOnline      EventType = "user_online"
+	EventNodeCreated      EventType = "node_created"
+	EventNodeUpdated      EventType = "node_updated"
+	EventNodeDeleted      EventType = "node_deleted"
+	EventRelationCreated  EventType = "relation_created"
+	EventCommentAdded     EventType = "comment_added"
+	EventNodeLocked       EventType = "node_locked"
+	EventNodeUnlocked     EventType = "node_unlocked"
+	EventUserOnline       EventType = "user_online"
+	EventQuickDropCreated EventType = "quick_drop_created"
+	EventQuickDropDeleted EventType = "quick_drop_deleted"
+	EventQuickDropPinned  EventType = "quick_drop_pinned"
+	EventIdeaCreated      EventType = "idea_created"
+	EventIdeaUpdated      EventType = "idea_updated"
+	EventIdeaDeleted      EventType = "idea_deleted"
 )
 
 type Event struct {
@@ -135,3 +141,23 @@ func (h *Hub) BroadcastToProject(projectID string, event Event, excludeClientID 
 		Payload:         payload,
 	}
 }
+
+func (h *Hub) BroadcastToUser(userID string, event Event) {
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, room := range h.rooms {
+		for client := range room {
+			if client.UserID == userID {
+				select {
+				case client.send <- payload:
+				default:
+				}
+			}
+		}
+	}
+}
+

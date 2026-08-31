@@ -293,3 +293,77 @@ type CreateCommentInput struct {
 	Content   string  `json:"content"    validate:"required,min=1,max=10000"`
 	ReplyToID *string `json:"reply_to_id"`
 }
+
+// Quick Drop Domain Types
+type QuickDrop struct {
+	ID        string          `json:"id"`
+	UserID    string          `json:"user_id"`
+	Type      string          `json:"type"` // "text", "code", "link", "image", "file"
+	Content   string          `json:"content"`
+	Metadata  json.RawMessage `json:"metadata"`
+	IsPinned  bool            `json:"is_pinned"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+
+type CreateQuickDropInput struct {
+	Type     string          `json:"type"     validate:"required"`
+	Content  string          `json:"content"  validate:"required"`
+	Metadata json.RawMessage `json:"metadata"`
+	IsPinned bool            `json:"is_pinned"`
+}
+
+// Idea Domain Types
+type IdeaGroup struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	Icon      string    `json:"icon"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type CreateIdeaGroupInput struct {
+	Name  string `json:"name"  validate:"required,min=1,max=255"`
+	Color string `json:"color"`
+	Icon  string `json:"icon"`
+}
+
+type Idea struct {
+	ID             string    `json:"id"`
+	UserID         string    `json:"user_id"`
+	GroupID        *string   `json:"group_id,omitempty"`
+	Title          string    `json:"title"`
+	Content        string    `json:"content"`
+	Tags           []string  `json:"tags"`
+	Color          *string   `json:"color,omitempty"`
+	Status         string    `json:"status"` // "raw", "in_progress", "matured", "archived"
+	PromotedNodeID *string   `json:"promoted_node_id,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type CreateIdeaInput struct {
+	GroupID *string  `json:"group_id"`
+	Title   string   `json:"title"   validate:"required,min=1,max=500"`
+	Content string   `json:"content"`
+	Tags    []string `json:"tags"`
+	Color   *string  `json:"color"`
+	Status  string   `json:"status"`
+}
+
+type UpdateIdeaInput struct {
+	GroupID *string  `json:"group_id"`
+	Title   *string  `json:"title"   validate:"omitempty,min=1,max=500"`
+	Content *string  `json:"content"`
+	Tags    []string `json:"tags"`
+	Color   *string  `json:"color"`
+	Status  *string  `json:"status"`
+}
+
+type PromoteIdeaInput struct {
+	ProjectID string   `json:"project_id" validate:"required"`
+	Type      NodeType `json:"type"       validate:"required"`
+}
+
