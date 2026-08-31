@@ -14,6 +14,7 @@ export interface SynapseProject {
   description?: string;
   tags?: string[];
   node_counts?: Record<string, number>;
+  members?: any[];
 }
 
 export interface SynapseNode {
