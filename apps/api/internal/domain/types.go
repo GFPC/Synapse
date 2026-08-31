@@ -367,3 +367,53 @@ type PromoteIdeaInput struct {
 	Type      NodeType `json:"type"       validate:"required"`
 }
 
+
+
+// API Key Domain Types
+type ApiKey struct {
+	ID          string     `json:"id"`
+	UserID      string     `json:"user_id"`
+	Name        string     `json:"name"`
+	KeyHash     string     `json:"-"`
+	KeyPrefix   string     `json:"key_prefix"`
+	Permissions []string   `json:"permissions"`
+	LastUsedAt  *time.Time `json:"last_used_at,omitempty"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+type CreateApiKeyInput struct {
+	Name        string   `json:"name" validate:"required,min=1,max=100"`
+	Permissions []string `json:"permissions"`
+	ExpiresIn   *string  `json:"expires_in,omitempty"` // e.g. "30d", "90d", "1y", "" (never)
+}
+
+type CreateApiKeyResult struct {
+	ApiKey ApiKey `json:"api_key"`
+	Key    string `json:"key"` // Plaintext key, shown only once on creation
+}
+
+// GitHub Commit & PR Domain Types
+type NodeCommit struct {
+	ID         string    `json:"id"`
+	NodeID     string    `json:"node_id"`
+	CommitHash string    `json:"commit_hash"`
+	Message    string    `json:"message"`
+	Author     string    `json:"author"`
+	Branch     *string   `json:"branch,omitempty"`
+	RepoURL    *string   `json:"repo_url,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type NodePullRequest struct {
+	ID        string     `json:"id"`
+	NodeID    string     `json:"node_id"`
+	PRNumber  int        `json:"pr_number"`
+	PRURL     string     `json:"pr_url"`
+	Title     string     `json:"title"`
+	Status    string     `json:"status"` // "open", "merged", "closed"
+	Author    *string    `json:"author,omitempty"`
+	MergedAt  *time.Time `json:"merged_at,omitempty"`
+	RepoURL   *string    `json:"repo_url,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+}

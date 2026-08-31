@@ -1,0 +1,25 @@
+{
+  "name": "@synapse/mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) Server for Synapse Architectural Second Brain",
+  "main": "dist/index.js",
+  "bin": {
+    "synapse-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["mcp", "model-context-protocol", "synapse", "ai", "cursor", "claude", "second-brain"],
+  "author": "Synapse Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.5.0",
+    "axios": "^1.7.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
