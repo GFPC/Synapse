@@ -16,6 +16,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { mobileQuickDropApi, QuickDropItem } from '../api/quickdrop';
 import { wsService } from '../api/ws';
+import { CopyNavIcon, CheckNavIcon } from '../components/icons/NavIcons';
 
 export const QuickDropScreen: React.FC = () => {
   const [items, setItems] = useState<QuickDropItem[]>([]);
@@ -210,9 +211,11 @@ export const QuickDropScreen: React.FC = () => {
             style={[styles.copyBtn, isCopied && styles.copyBtnSuccess]}
             onPress={() => handleCopy(item.id, item.content)}
           >
-            <Text style={[styles.copyBtnText, isCopied && styles.copyBtnTextSuccess]}>
-              {isCopied ? 'Copied' : 'Copy'}
-            </Text>
+            {isCopied ? (
+              <CheckNavIcon size={14} color="#10B981" focused />
+            ) : (
+              <CopyNavIcon size={14} color="#A1A1AA" />
+            )}
           </TouchableOpacity>
         </View>
       </View>

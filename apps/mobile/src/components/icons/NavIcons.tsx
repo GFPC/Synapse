@@ -300,3 +300,59 @@ export const IdeasNavIcon: React.FC<IconProps> = ({
     </Svg>
   );
 };
+
+/**
+ * 8. Copy Icon
+ * Minimalist dual sheet
+ */
+export const CopyNavIcon: React.FC<IconProps> = ({
+  size = 15,
+  color = '#A1A1AA',
+  focused = false,
+}) => {
+  const strokeWidth = focused ? 2.2 : 1.75;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect
+        x="9"
+        y="9"
+        width="13"
+        height="13"
+        rx="2"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+};
+
+/**
+ * 9. Check / Success Icon
+ */
+export const CheckNavIcon: React.FC<IconProps> = ({
+  size = 15,
+  color = '#10B981',
+  focused = false,
+}) => {
+  const strokeWidth = focused ? 2.5 : 2;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 6L9 17L4 12"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+};

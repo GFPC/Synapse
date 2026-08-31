@@ -3,6 +3,7 @@ import { quickDropApi } from '../../api/quickdrop';
 import type { QuickDropItem } from '../../api/quickdrop';
 import { synapseWs } from '../../api/websocket';
 import type { WsEvent } from '../../api/websocket';
+import { Copy, Check, Pin, Trash2 } from 'lucide-react';
 
 export const QuickDropView: React.FC = () => {
   const [items, setItems] = useState<QuickDropItem[]>([]);
@@ -314,19 +315,19 @@ export const QuickDropView: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleTogglePin(item.id)}
-                          title={item.is_pinned ? 'Unpin' : 'Pin to top'}
-                          className={`p-1 rounded hover:bg-zinc-800 transition ${
+                          title={item.is_pinned ? 'Unpin' : 'Pin'}
+                          className={`p-1.5 rounded hover:bg-zinc-800 transition ${
                             item.is_pinned ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
                           }`}
                         >
-                          📌
+                          <Pin className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
                           title="Delete"
-                          className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition"
+                          className="p-1.5 rounded text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition"
                         >
-                          ✕
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -352,7 +353,7 @@ export const QuickDropView: React.FC = () => {
                           rel="noreferrer"
                           className="text-sky-400 hover:underline break-all text-sm font-medium flex items-center gap-1.5"
                         >
-                          🔗 {item.content}
+                          {item.content}
                         </a>
                       ) : (
                         <p className="text-sm text-zinc-200 whitespace-pre-wrap break-words leading-relaxed font-sans">
@@ -369,13 +370,15 @@ export const QuickDropView: React.FC = () => {
 
                       <button
                         onClick={() => handleCopy(item.id, item.content)}
-                        className={`px-3 py-1 rounded text-xs font-medium transition flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded text-xs font-medium transition flex items-center gap-1.5 ${
                           isCopied
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60'
                         }`}
+                        title={isCopied ? 'Copied' : 'Copy'}
                       >
-                        {isCopied ? '✓ Copied!' : '📋 Copy to Clipboard'}
+                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{isCopied ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
                   </div>
