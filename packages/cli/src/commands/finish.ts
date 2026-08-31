@@ -33,20 +33,20 @@ export async function finishCommand() {
     name: 'status',
     message: `Mark [${target.display_id}] ${target.title} as:`,
     choices: [
-      { name: 'completed', message: '? Completed (Done & verified)' },
-      { name: 'review', message: '? In Review (Ready for PR/review)' },
-      { name: 'draft', message: '? Draft (Paused)' },
+      { name: 'completed', message: '[Done] Completed (Verified & merged)' },
+      { name: 'review', message: '[Review] In Review (Ready for PR)' },
+      { name: 'draft', message: '[Draft] Draft (Paused)' },
     ],
   });
 
   try {
     await api.updateNode(target.id, { status: prompt.status });
-    console.log(chalk.green(`\n? Marked [${target.display_id}] as ${prompt.status} in Synapse graph!`));
+    console.log(chalk.green(`\n[OK] Marked [${target.display_id}] as ${prompt.status} in Synapse graph!`));
     
     // Clear active context
     setActiveNode(null);
     console.log(chalk.dim('Cleared active node context. Use `syn use <ID>` when ready for the next task.\n'));
   } catch (err: any) {
-    console.error(chalk.red(`? Failed to update node: ${err.message}`));
+    console.error(chalk.red(`[ERR] Failed to update node: ${err.message}`));
   }
 }

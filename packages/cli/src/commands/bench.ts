@@ -14,7 +14,7 @@ export async function benchCommand(options: { node?: string; file?: string }) {
   const api = new SynapseApi();
   const nodes = await api.listNodes(cfg.project);
 
-  // Find target benchmark node (or auto-detect from branch)
+  // Find target benchmark node (or auto-detect from branch/context)
   let targetNodeId = options.node;
   if (!targetNodeId) {
     const currentBranch = Git.getCurrentBranch();
@@ -55,9 +55,9 @@ export async function benchCommand(options: { node?: string; file?: string }) {
 
   try {
     await api.updateNode(targetNode.id, { content: updatedContent, status: 'completed' });
-    console.log(chalk.green(`? Benchmark metrics successfully attached to [${targetNode.display_id}]!`));
-    console.log(chalk.dim(`View live on ?????? Synapse at ${cfg.server}/#/project/${cfg.project}\n`));
+    console.log(chalk.green(`[OK] Benchmark metrics successfully attached to [${targetNode.display_id}]!`));
+    console.log(chalk.dim(`View live on Synapse Canvas at ${cfg.server}/#/project/${cfg.project}\n`));
   } catch (err: any) {
-    console.error(chalk.red(`? Failed to attach benchmark: ${err.message}`));
+    console.error(chalk.red(`[ERR] Failed to attach benchmark: ${err.message}`));
   }
 }

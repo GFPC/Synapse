@@ -2,48 +2,50 @@ import chalk from 'chalk';
 import fs from 'fs';
 import { SynapseApi } from '../api';
 
-export async function dropCommand(textArg?: string, options: { type?: string; file?: string } = {}) {
-  const api = new SynapseApi();
+export async function dropCommand(textArg?: string, options: { type?: 'text' | 'code' | 'link'; file?: string } = {}) {
   let content = textArg || '';
-  let dropType = options.type || 'text';
 
   if (options.file && fs.existsSync(options.file)) {
     content = fs.readFileSync(options.file, 'utf-8');
-    dropType = 'code';
   } else if (!content && !process.stdin.isTTY) {
-    // Read from pipe stdin (e.g. cat file | synapse drop)
     content = fs.readFileSync(0, 'utf-8');
-    if (content.length > 50 && (content.includes('{') || content.includes('('))) {
-      dropType = 'code';
-    }
   }
 
   if (!content.trim()) {
-    console.log(chalk.yellow('Usage: synapse drop "your text" OR cat error.log | synapse drop'));
+    console.log(chalk.yellow('Usage: synapse drop "Text to drop" OR cat file.txt | synapse drop'));
     return;
   }
 
+  let dropType = options.type || 'text';
+  if (content.startsWith('http://') || content.startsWith('https://')) {
+    dropType = 'link';
+  } else if (content.includes('{') || content.includes('function') || content.includes('const ')) {
+    dropType = 'code';
+  }
+
+  const api = new SynapseApi();
   try {
-    await api.createQuickDrop(dropType, content.trim());
-    console.log(chalk.green(`? Quick Drop synced to phone and PC! (${content.length} chars)`));
+    const item = await api.createQuickDrop(content.trim(), dropType);
+    console.log(chalk.green(`[OK] Quick drop sent to mobile & web mesh! (${dropType})`));
+    console.log(chalk.dim(`ID: ${item.id} | Preview: ${content.trim().substring(0, 50)}...\n`));
   } catch (err: any) {
-    console.error(chalk.red(`? Failed to drop: ${err.message}`));
+    console.error(chalk.red(`[ERR] Failed to drop: ${err.message}`));
   }
 }
 
-export async function dropsCommand(limitArg: number = 10) {
+export async function dropsCommand(limit: number = 10) {
   const api = new SynapseApi();
   try {
-    const drops = await api.listQuickDrops();
-    console.log(chalk.cyan.bold(`\nRecent Quick Drops (${drops.length}):\n`));
-    for (const d of drops.slice(0, limitArg)) {
-      const time = new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const tag = chalk.bold(`[${d.type.toUpperCase()}]`);
-      const body = d.content.length > 80 ? d.content.substring(0, 77) + '...' : d.content;
-      console.log(`  ${chalk.dim(time)} ${tag} ${body}`);
-    }
+    const items = await api.listQuickDrops();
+    const slice = items.slice(0, limit);
+
+    console.log(chalk.cyan.bold(`\nRecent Quick Drops (${slice.length}):\n`));
+    slice.forEach((item) => {
+      const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      console.log(`  ${chalk.dim(time)} ${chalk.cyan(`[${item.type.toUpperCase()}]`)} ${item.content.replace(/\n/g, ' ').substring(0, 70)}`);
+    });
     console.log('');
   } catch (err: any) {
-    console.error(chalk.red(`? Failed to list drops: ${err.message}`));
+    console.error(chalk.red(`[ERR] Failed to list drops: ${err.message}`));
   }
 }

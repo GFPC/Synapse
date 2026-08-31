@@ -22,11 +22,11 @@ export async function linkCommand(nodeIdArg: string) {
   );
 
   if (!target) {
-    console.log(chalk.red(`Node ${nodeIdArg} not found in current project.`));
+    console.log(chalk.red(`[ERR] Node ${nodeIdArg} not found in current project.`));
     return;
   }
 
   const currentBranch = Git.getCurrentBranch();
-  console.log(chalk.green(`? Linked branch ${chalk.bold(currentBranch)} to [${target.display_id}] ${target.title}`));
-  console.log(chalk.dim(`Next commits in this branch will automatically be tagged with [${target.display_id}].`));
+  console.log(chalk.green(`[OK] Linked branch ${chalk.bold(currentBranch)} to [${target.display_id}] ${target.title}`));
+  console.log(chalk.dim(`Next commits in this branch will automatically be tagged with [${target.display_id}].\n`));
 }

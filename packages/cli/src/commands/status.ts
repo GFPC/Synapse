@@ -40,8 +40,8 @@ export async function statusCommand() {
       }
     }
 
-    console.log(chalk.cyan.bold(`\n? Synapse ? ${proj.name || 'Project'}\n`));
-    console.log(`  ${chalk.dim('Server:')}   ${cfg.server}  ${chalk.green(`? Online (${pingMs}ms)`)}`);
+    console.log(chalk.cyan.bold(`\n=== Synapse :: ${proj.name || 'Project'} ===\n`));
+    console.log(`  ${chalk.dim('Server:')}   ${cfg.server}  ${chalk.green(`[Online: ${pingMs}ms]`)}`);
     console.log(`  ${chalk.dim('User:')}     ${userName} (${userEmail})`);
     console.log(`  ${chalk.dim('Project:')}  ${proj.name} [${nodes.length} nodes]`);
     console.log(`  ${chalk.dim('Branch:')}   ${chalk.yellow.bold(currentBranch || 'N/A')}`);
@@ -49,10 +49,10 @@ export async function statusCommand() {
     if (activeNode) {
       console.log(`  ${chalk.dim('Active:')}   ${chalk.cyan.bold(`[${activeNode.display_id}]`)} ${activeNode.title} (${chalk.green(activeNode.status || 'in_progress')})`);
     } else {
-      console.log(`  ${chalk.dim('Active:')}   No active node selected (run ${chalk.bold('syn use')} to pick one without creating branches)`);
+      console.log(`  ${chalk.dim('Active:')}   No active node selected (run ${chalk.bold('syn use')} to select one)`);
     }
     console.log('');
   } catch (err: any) {
-    console.error(chalk.red(`? Failed to get status: ${err.message || err}`));
+    console.error(chalk.red(`[ERR] Failed to get status: ${err.message || err}`));
   }
 }

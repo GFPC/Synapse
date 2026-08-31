@@ -23,7 +23,7 @@ export async function startCommand(nodeIdArg?: string, options: { branch?: boole
     const choices = nodes.map((n) => ({
       name: n.id,
       message: `[${n.display_id}] ${n.title} (${n.type}) [${n.status || 'draft'}]${
-        n.display_id === currentActiveId ? ' ? CURRENT' : ''
+        n.display_id === currentActiveId ? ' * ACTIVE' : ''
       }`,
     }));
 
@@ -51,7 +51,7 @@ export async function startCommand(nodeIdArg?: string, options: { branch?: boole
       .substring(0, 30);
     const branchName = `feat/${targetNode.display_id}-${slug}`;
     Git.checkoutBranch(branchName, true);
-    console.log(chalk.green(`? Switched to branch: ${chalk.bold(branchName)}`));
+    console.log(chalk.green(`[OK] Switched to branch: ${chalk.bold(branchName)}`));
   } else {
     const currentBranch = Git.getCurrentBranch();
     console.log(chalk.dim(`Staying on active branch: ${chalk.yellow.bold(currentBranch || 'main')}`));
@@ -60,9 +60,9 @@ export async function startCommand(nodeIdArg?: string, options: { branch?: boole
   // Update status in Synapse
   try {
     await api.updateNode(targetNode.id, { status: 'in_progress' });
-    console.log(chalk.cyan(`\n? Active context: ${chalk.cyan.bold(`[${targetNode.display_id}]`)} ${targetNode.title}`));
-    console.log(chalk.green(`? Status updated to ${chalk.bold('in_progress')} in Synapse graph`));
-    console.log(chalk.dim(`Any commits in this repo will now automatically be tagged with [${targetNode.display_id}].\n`));
+    console.log(chalk.cyan(`\n[OK] Active context set: ${chalk.cyan.bold(`[${targetNode.display_id}]`)} ${targetNode.title}`));
+    console.log(chalk.green(`[OK] Status updated to in_progress in Synapse graph`));
+    console.log(chalk.dim(`Next commits in this repo will automatically be tagged with [${targetNode.display_id}].\n`));
   } catch (err: any) {
     console.error(chalk.yellow(`! Active context set, but failed to update status on server: ${err.message}`));
   }
