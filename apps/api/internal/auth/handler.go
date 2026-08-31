@@ -37,11 +37,18 @@ func NewHandler(service *AuthService) *Handler {
 	}
 }
 
-func (h *Handler) RegisterRoutes(e *echo.Echo) {
+func (h *Handler) RegisterPublicRoutes(e *echo.Echo) {
 	e.POST("/api/auth/register", h.Register)
 	e.POST("/api/auth/login", h.Login)
 	e.POST("/api/auth/refresh", h.Refresh)
-	e.GET("/api/auth/me", h.GetMe, middleware.JWTMiddleware(h.service.cfg.JWTSecret))
+}
+
+func (h *Handler) RegisterProtectedRoutes(api *echo.Group) {
+	api.GET("/auth/me", h.GetMe)
+}
+
+func (h *Handler) RegisterRoutes(e *echo.Echo) {
+	h.RegisterPublicRoutes(e)
 }
 
 func (h *Handler) Register(c echo.Context) error {

@@ -157,7 +157,7 @@ func main() {
 	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 	e.GET("/ws", wsHandler.Handle)
 
-	authHandler.RegisterRoutes(e)
+	authHandler.RegisterPublicRoutes(e)
 	webhookHandler.RegisterRoutes(e) // GitHub webhooks
 
 	// Protected (JWT or syn_live_ API Key required)
@@ -178,6 +178,7 @@ func main() {
 	quickdropHandler.RegisterRoutes(api)
 	ideaHandler.RegisterRoutes(api)
 	apiKeyHandler.RegisterRoutes(api)
+	authHandler.RegisterProtectedRoutes(api)
 
 	// ?? 12. Start + Graceful Shutdown ?????????????????????????????????????????
 	go func() {
