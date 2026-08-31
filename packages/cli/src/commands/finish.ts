@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import enquirer from 'enquirer';
 import { SynapseApi } from '../api';
-import { loadConfig } from '../config';
+import { loadConfig, getActiveNode, setActiveNode } from '../config';
 import { Git } from '../git';
 
 export async function finishCommand() {
@@ -12,10 +12,10 @@ export async function finishCommand() {
   }
 
   const currentBranch = Git.getCurrentBranch();
-  const nodeId = Git.getNodeFromBranch(currentBranch);
+  const nodeId = getActiveNode() || Git.getNodeFromBranch(currentBranch);
 
   if (!nodeId) {
-    console.log(chalk.yellow(`Current branch (${currentBranch}) does not match any Synapse node ID.`));
+    console.log(chalk.yellow('No active Synapse node context found. Run `syn use <ID>` to select one.'));
     return;
   }
 
@@ -34,7 +34,7 @@ export async function finishCommand() {
     message: `Mark [${target.display_id}] ${target.title} as:`,
     choices: [
       { name: 'completed', message: '? Completed (Done & verified)' },
-      { name: 'review', message: '? In Review (PR opened)' },
+      { name: 'review', message: '? In Review (Ready for PR/review)' },
       { name: 'draft', message: '? Draft (Paused)' },
     ],
   });
@@ -42,17 +42,10 @@ export async function finishCommand() {
   try {
     await api.updateNode(target.id, { status: prompt.status });
     console.log(chalk.green(`\n? Marked [${target.display_id}] as ${prompt.status} in Synapse graph!`));
-
-    const promptBack = await enquirer.prompt<{ switchMain: boolean }>({
-      type: 'confirm',
-      name: 'switchMain',
-      message: 'Switch back to main branch?',
-      initial: true,
-    });
-
-    if (promptBack.switchMain) {
-      Git.checkoutBranch('main');
-    }
+    
+    // Clear active context
+    setActiveNode(null);
+    console.log(chalk.dim('Cleared active node context. Use `syn use <ID>` when ready for the next task.\n'));
   } catch (err: any) {
     console.error(chalk.red(`? Failed to update node: ${err.message}`));
   }

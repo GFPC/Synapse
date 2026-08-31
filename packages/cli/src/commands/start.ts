@@ -1,10 +1,10 @@
 import chalk from 'chalk';
 import enquirer from 'enquirer';
 import { SynapseApi } from '../api';
-import { loadConfig } from '../config';
+import { loadConfig, getActiveNode, setActiveNode } from '../config';
 import { Git } from '../git';
 
-export async function startCommand(nodeIdArg?: string) {
+export async function startCommand(nodeIdArg?: string, options: { branch?: boolean } = {}) {
   const cfg = loadConfig();
   if (!cfg.project) {
     console.log(chalk.yellow('Run `synapse init` first!'));
@@ -19,15 +19,18 @@ export async function startCommand(nodeIdArg?: string) {
     : null;
 
   if (!targetNode) {
+    const currentActiveId = getActiveNode();
     const choices = nodes.map((n) => ({
       name: n.id,
-      message: `[${n.display_id}] ${n.title} (${n.type}) [${n.status || 'draft'}]`,
+      message: `[${n.display_id}] ${n.title} (${n.type}) [${n.status || 'draft'}]${
+        n.display_id === currentActiveId ? ' ? CURRENT' : ''
+      }`,
     }));
 
     const prompt = await enquirer.prompt<{ selectedId: string }>({
       type: 'select',
       name: 'selectedId',
-      message: 'Choose node to start working on:',
+      message: 'Select active architectural node:',
       choices,
     });
 
@@ -36,26 +39,31 @@ export async function startCommand(nodeIdArg?: string) {
 
   if (!targetNode) return;
 
-  const slug = targetNode.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 30);
+  // Set active node in .synapse-context without changing git branches
+  setActiveNode(targetNode.display_id);
 
-  const branchName = `feat/${targetNode.display_id}-${slug}`;
+  // Optional: create isolated branch if user explicitly passed --branch
+  if (options.branch) {
+    const slug = targetNode.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 30);
+    const branchName = `feat/${targetNode.display_id}-${slug}`;
+    Git.checkoutBranch(branchName, true);
+    console.log(chalk.green(`? Switched to branch: ${chalk.bold(branchName)}`));
+  } else {
+    const currentBranch = Git.getCurrentBranch();
+    console.log(chalk.dim(`Staying on active branch: ${chalk.yellow.bold(currentBranch || 'main')}`));
+  }
 
-  console.log(chalk.cyan(`\nSwitching to node: [${targetNode.display_id}] ${targetNode.title}`));
-  
-  // Checkout branch
-  Git.checkoutBranch(branchName, true);
-
-  // Update status to in_progress in Synapse
+  // Update status in Synapse
   try {
     await api.updateNode(targetNode.id, { status: 'in_progress' });
-    console.log(chalk.green(`? Node status updated to ${chalk.bold('in_progress')} in Synapse`));
-    console.log(chalk.green(`? Git branch created: ${chalk.bold(branchName)}`));
-    console.log(chalk.dim(`Commits in this branch will automatically be tagged with [${targetNode.display_id}].\n`));
+    console.log(chalk.cyan(`\n? Active context: ${chalk.cyan.bold(`[${targetNode.display_id}]`)} ${targetNode.title}`));
+    console.log(chalk.green(`? Status updated to ${chalk.bold('in_progress')} in Synapse graph`));
+    console.log(chalk.dim(`Any commits in this repo will now automatically be tagged with [${targetNode.display_id}].\n`));
   } catch (err: any) {
-    console.error(chalk.yellow(`! Branch created, but failed to update status on server: ${err.message}`));
+    console.error(chalk.yellow(`! Active context set, but failed to update status on server: ${err.message}`));
   }
 }

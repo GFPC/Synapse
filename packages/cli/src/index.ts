@@ -44,9 +44,12 @@ program
   .action(showCommand);
 
 program
-  .command('start [id]')
+  .command('use [id]')
+  .alias('start')
   .alias('switch')
-  .description('Start working on a node (interactive selector + auto-create git branch)')
+  .alias('set')
+  .description('Switch active node context in current branch without creating git branches')
+  .option('-b, --branch', 'Optionally create and checkout an isolated git branch')
   .action(startCommand);
 
 program
@@ -82,7 +85,7 @@ program
 
 program
   .command('link <id>')
-  .description('Link current git branch to an architectural node')
+  .description('Link current git branch or commits to an architectural node')
   .action(linkCommand);
 
 program

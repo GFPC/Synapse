@@ -18,6 +18,7 @@ export interface SynapseProjectConfig {
 
 const CONFIG_FILE = '.synapse.yml';
 const KEY_FILE = '.synapse-key';
+const CONTEXT_FILE = '.synapse-context';
 const GLOBAL_DIR = path.join(process.env.USERPROFILE || process.env.HOME || '', '.synapse');
 const GLOBAL_CONFIG = path.join(GLOBAL_DIR, 'config.json');
 
@@ -86,4 +87,26 @@ export function saveApiKey(key: string, root: string = findRoot(), globalOnly: b
     fs.mkdirSync(GLOBAL_DIR, { recursive: true });
   }
   fs.writeFileSync(GLOBAL_CONFIG, JSON.stringify({ apiKey: key.trim(), lastUpdated: new Date().toISOString() }, null, 2));
+}
+
+export function getActiveNode(root: string = findRoot()): string | null {
+  const ctxPath = path.join(root, CONTEXT_FILE);
+  if (fs.existsSync(ctxPath)) {
+    try {
+      const id = fs.readFileSync(ctxPath, 'utf-8').trim();
+      return id || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export function setActiveNode(nodeDisplayId: string | null, root: string = findRoot()): void {
+  const ctxPath = path.join(root, CONTEXT_FILE);
+  if (!nodeDisplayId) {
+    if (fs.existsSync(ctxPath)) fs.unlinkSync(ctxPath);
+  } else {
+    fs.writeFileSync(ctxPath, nodeDisplayId.trim().toUpperCase(), 'utf-8');
+  }
 }

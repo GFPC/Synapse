@@ -30,13 +30,11 @@ export class Git {
   public static getRepoSlug(): string {
     const origin = this.getRemoteOrigin();
     if (!origin) return '';
-    // matches git@github.com:owner/repo.git or https://github.com/owner/repo.git
     const match = origin.match(/[:\/]([a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+?)(\.git)?$/);
     return match ? match[1] : '';
   }
 
   public static getNodeFromBranch(branch: string = this.getCurrentBranch()): string | null {
-    // Look for e.g. feat/C-002-order-matcher or C-002
     const match = branch.match(/([A-Z]-\d{3})/i);
     return match ? match[1].toUpperCase() : null;
   }
@@ -57,12 +55,24 @@ export class Git {
       return { prepare: false, post: false };
     }
 
-    // 1. prepare-commit-msg hook
+    // prepare-commit-msg hook: Checks .synapse-context first, then branch name!
     const prepareHook = `#!/bin/sh
-# Synapse Git Hook ? Auto tag commit with Node ID from branch
-BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
-NODE_ID=$(echo "$BRANCH_NAME" | grep -oE '[A-Za-z]-[0-9]{3}' | tr '[:lower:]' '[:upper:]')
+# Synapse Git Hook ? Auto tag commit with active Synapse Node ID
 
+NODE_ID=""
+
+# 1. Check local .synapse-context
+if [ -f ".synapse-context" ]; then
+    NODE_ID=$(cat .synapse-context | tr -d ' \r\n' | tr '[:lower:]' '[:upper:]')
+fi
+
+# 2. Fallback to branch name if no context file
+if [ -z "$NODE_ID" ]; then
+    BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
+    NODE_ID=$(echo "$BRANCH_NAME" | grep -oE '[A-Za-z]-[0-9]{3}' | tr '[:lower:]' '[:upper:]')
+fi
+
+# 3. Inject into commit message
 if [ -n "$NODE_ID" ]; then
     COMMIT_MSG_FILE=$1
     FIRST_LINE=$(head -n1 "$COMMIT_MSG_FILE")
@@ -77,11 +87,19 @@ fi
     const preparePath = path.join(hooksDir, 'prepare-commit-msg');
     fs.writeFileSync(preparePath, prepareHook, { mode: 0o755 });
 
-    // 2. Add .synapse-key to .gitignore
+    // Add .synapse-key and .synapse-context to .gitignore
     const gitignorePath = path.join(root, '.gitignore');
     let gi = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, 'utf-8') : '';
+    let updated = false;
     if (!gi.includes('.synapse-key')) {
       gi += '\n# Synapse\n.synapse-key\n';
+      updated = true;
+    }
+    if (!gi.includes('.synapse-context')) {
+      gi += '.synapse-context\n';
+      updated = true;
+    }
+    if (updated) {
       fs.writeFileSync(gitignorePath, gi, 'utf-8');
     }
 

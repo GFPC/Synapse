@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { SynapseApi } from '../api';
-import { loadConfig, loadApiKey } from '../config';
+import { loadConfig, loadApiKey, getActiveNode } from '../config';
 import { Git } from '../git';
 
 export async function statusCommand() {
@@ -19,7 +19,9 @@ export async function statusCommand() {
     const proj = await api.getProject(cfg.project);
     const nodes = await api.listNodes(cfg.project);
     const currentBranch = Git.getCurrentBranch();
-    const activeNodeId = Git.getNodeFromBranch(currentBranch);
+    
+    // Active node: check .synapse-context first, then branch
+    const activeNodeId = getActiveNode() || Git.getNodeFromBranch(currentBranch);
     const activeNode = activeNodeId ? nodes.find((n) => n.display_id === activeNodeId) : null;
 
     let userName = 'Alex Mercer';
@@ -47,7 +49,7 @@ export async function statusCommand() {
     if (activeNode) {
       console.log(`  ${chalk.dim('Active:')}   ${chalk.cyan.bold(`[${activeNode.display_id}]`)} ${activeNode.title} (${chalk.green(activeNode.status || 'in_progress')})`);
     } else {
-      console.log(`  ${chalk.dim('Active:')}   No active node detected on this branch (run ${chalk.bold('synapse start')} to pick one)`);
+      console.log(`  ${chalk.dim('Active:')}   No active node selected (run ${chalk.bold('syn use')} to pick one without creating branches)`);
     }
     console.log('');
   } catch (err: any) {
