@@ -1,3 +1,4 @@
+import { DatePicker } from '../ui/DatePicker';
 import React from 'react';
 import type { SynapseNode } from '../../types';
 import {
@@ -758,12 +759,10 @@ export const TypeFields: React.FC<TypeFieldsProps> = ({ node, isEditable, onUpda
         </div>
         <div className="flex items-center gap-3">
           <label className="text-xs font-semibold text-text-muted">Дата утверждения:</label>
-          <input
-            type="date"
+          <DatePicker
             disabled={!isEditable}
             value={meta.decided_at || ''}
-            onChange={(e) => onUpdateMeta({ ...meta, decided_at: e.target.value })}
-            className="bg-surface border border-border rounded px-2 py-1 text-xs text-text-main"
+            onChange={(dateStr) => onUpdateMeta({ ...meta, decided_at: dateStr })}
           />
         </div>
       </div>
