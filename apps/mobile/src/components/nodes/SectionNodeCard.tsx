@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SynapseNode, NodeRelation, NodeType } from '../../types';
-import { THEME, NODE_TYPE_CONFIG, RELATION_CONFIG, RelationConfig } from '../../theme/tokens';
+import { THEME, NODE_TYPE_CONFIG } from '../../theme/tokens';
 import { BenchmarkMeter } from './BenchmarkMeter';
 
 interface Props {
@@ -9,8 +9,7 @@ interface Props {
   relations: NodeRelation[];
   allNodes: SynapseNode[];
   onPress: () => void;
-  onDoublePress?: () => void;
-  onAddRelation?: () => void;
+  onLongPress?: () => void;
 }
 
 export const SectionNodeCard: React.FC<Props> = ({
@@ -18,14 +17,14 @@ export const SectionNodeCard: React.FC<Props> = ({
   relations,
   allNodes,
   onPress,
-  onDoublePress,
-  onAddRelation,
+  onLongPress,
 }) => {
-  const conf = NODE_TYPE_CONFIG[node.type as NodeType] || NODE_TYPE_CONFIG.note;
+  const conf = NODE_TYPE_CONFIG[node.type as NodeType] || {
+    label: node.type,
+    color: '#8A8A94',
+    icon: '?',
+  };
   const isBenchmark = node.type === 'benchmark';
-
-  const nodeMap = new Map<string, SynapseNode>();
-  allNodes.forEach((n) => nodeMap.set(n.id, n));
 
   const nodeRelations = relations.filter(
     (r) => r.from_node_id === node.id || r.to_node_id === node.id
@@ -33,108 +32,76 @@ export const SectionNodeCard: React.FC<Props> = ({
 
   const statusColor =
     node.status === 'completed' || node.status === 'closed' || node.status === 'accepted'
-      ? THEME.status.ok
-      : node.status === 'blocked'
-      ? THEME.status.crit
+      ? '#10B981'
       : node.status === 'in_progress'
-      ? THEME.status.warn
-      : THEME.status.muted;
+      ? '#38BDF8'
+      : node.status === 'blocked'
+      ? '#EF4444'
+      : '#8A8A94';
 
-  const authorInitials = node.author?.name
-    ? node.author.name
-        .split(' ')
-        .map((p) => p[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
-    : 'LA';
+  const statusLabel =
+    node.status === 'completed'
+      ? 'Completed'
+      : node.status === 'in_progress'
+      ? 'In Progress'
+      : node.status === 'blocked'
+      ? 'Blocked'
+      : 'Draft';
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { borderLeftColor: conf.color }]}
       activeOpacity={0.75}
       onPress={onPress}
-      onLongPress={onAddRelation}
-      delayLongPress={450}
+      onLongPress={onLongPress}
     >
-      {/* Top Meta Line: ID, Type Label, Status */}
+      {/* Top Meta Line: ID badge, Type name, Status Pill */}
       <View style={styles.topRow}>
         <View style={styles.typeGroup}>
-          <Text style={[styles.displayId, { color: conf.color }]}>
-            {node.display_id}
-          </Text>
+          <View style={[styles.idBadge, { backgroundColor: `${conf.color}18`, borderColor: `${conf.color}40` }]}>
+            <Text style={[styles.displayId, { color: conf.color }]}>
+              {node.display_id}
+            </Text>
+          </View>
           <Text style={styles.typeLabel}>{conf.label}</Text>
         </View>
 
-        <View style={styles.statusGroup}>
+        <View style={[styles.statusPill, { backgroundColor: `${statusColor}15`, borderColor: `${statusColor}35` }]}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          <Text style={styles.statusText}>{node.status || 'active'}</Text>
+          <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
         </View>
       </View>
 
       {/* Node Title */}
       <Text style={styles.title}>{node.title}</Text>
 
-      {/* Benchmark Latency & Throughput Meter */}
+      {/* Benchmark Latency & Throughput Meter if applicable */}
       {isBenchmark && <BenchmarkMeter meta={node.meta} />}
 
       {/* Content Preview */}
       {node.content ? (
         <Text style={styles.contentSnippet} numberOfLines={2}>
-          {node.content}
+          {node.content.replace(/^[#*`\s-]+/gm, '').trim()}
         </Text>
       ) : null}
 
-      {/* Connected Relations Chips */}
-      {nodeRelations.length > 0 && (
-        <View style={styles.relationsContainer}>
-          {nodeRelations.slice(0, 2).map((rel) => {
-            const isOut = rel.from_node_id === node.id;
-            const target = isOut ? nodeMap.get(rel.to_node_id) : nodeMap.get(rel.from_node_id);
-            const relConf: RelationConfig =
-              RELATION_CONFIG[rel.type as keyof typeof RELATION_CONFIG] || RELATION_CONFIG.related;
-
-            return (
-              <View
-                key={rel.id}
-                style={[
-                  styles.relChip,
-                  {
-                    borderColor: `${relConf.color}33`,
-                    backgroundColor: `${relConf.color}0D`,
-                  },
-                ]}
-              >
-                <Text style={[styles.relSymbol, { color: relConf.color }]}>
-                  {isOut ? '↳' : '↲'} {relConf.label}:
-                </Text>
-                <Text style={styles.relTargetTitle} numberOfLines={1}>
-                  {target ? `[${target.display_id}] ${target.title}` : 'Graph Node'}
-                </Text>
-              </View>
-            );
-          })}
-          {nodeRelations.length > 2 && (
-            <Text style={styles.moreRelsText}>
-              + {nodeRelations.length - 2} more
-            </Text>
-          )}
-        </View>
-      )}
-
-      {/* Card Footer: Tags & Author */}
-      <View style={styles.footer}>
+      {/* Bottom Footer: Tags and Relations Count */}
+      <View style={styles.footerRow}>
         <View style={styles.tagsRow}>
-          {node.tags && node.tags.length > 0 ? (
-            node.tags.slice(0, 3).map((tag, i) => (
-              <View key={i} style={styles.tagPill}>
-                <Text style={styles.tagText}>#{tag}</Text>
-              </View>
-            ))
-          ) : null}
+          {node.tags && node.tags.slice(0, 3).map((tag, idx) => (
+            <View key={idx} style={styles.tagChip}>
+              <Text style={styles.tagText}>#{tag.replace(/^#/, '')}</Text>
+            </View>
+          ))}
         </View>
 
-        <Text style={styles.authorText}>{authorInitials}</Text>
+        {nodeRelations.length > 0 && (
+          <View style={styles.relationChip}>
+            <Text style={styles.relationChipText}>
+              ?? {nodeRelations.length} {nodeRelations.length === 1 ? 'link' : 'links'}
+            </Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -142,37 +109,49 @@ export const SectionNodeCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME.surface2,
-    borderRadius: 8,
+    backgroundColor: '#121820',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: THEME.border,
-    padding: 10,
-    gap: 4,
+    borderColor: '#212A36',
+    borderLeftWidth: 3,
+    padding: 12,
+    marginBottom: 8,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    marginBottom: 6,
   },
   typeGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
+  idBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
   displayId: {
-    fontFamily: 'monospace',
     fontSize: 11,
+    fontFamily: 'monospace',
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   typeLabel: {
-    fontSize: 10.5,
-    color: THEME.text3,
+    fontSize: 11,
     fontWeight: '500',
+    color: '#8A8A94',
   },
-  statusGroup: {
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
     gap: 4,
   },
   statusDot: {
@@ -181,81 +160,54 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   statusText: {
-    fontSize: 9.5,
-    fontFamily: 'monospace',
-    color: THEME.text3,
-    textTransform: 'lowercase',
+    fontSize: 10,
+    fontWeight: '600',
   },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: THEME.text1,
-    lineHeight: 17,
+    color: '#F0F6FC',
+    lineHeight: 19,
+    marginBottom: 4,
   },
   contentSnippet: {
-    fontSize: 11,
-    color: THEME.text3,
-    lineHeight: 15,
-    marginTop: 2,
+    fontSize: 12,
+    color: '#8B949E',
+    lineHeight: 17,
+    marginBottom: 8,
   },
-  relationsContainer: {
-    gap: 3,
-    marginTop: 4,
-  },
-  relChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  relSymbol: {
-    fontFamily: 'monospace',
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  relTargetTitle: {
-    fontSize: 10,
-    color: THEME.text2,
-    flex: 1,
-  },
-  moreRelsText: {
-    fontSize: 9,
-    fontFamily: 'monospace',
-    color: THEME.accentBright,
-    fontWeight: '600',
-  },
-  footer: {
+  footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.04)',
+    marginTop: 2,
   },
   tagsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 4,
     flex: 1,
   },
-  tagPill: {
-    backgroundColor: THEME.surface3,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 3,
+  tagChip: {
+    backgroundColor: '#1A222D',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   tagText: {
-    fontSize: 9,
+    fontSize: 10,
+    color: '#8A8A94',
     fontFamily: 'monospace',
-    color: THEME.text4,
   },
-  authorText: {
-    fontSize: 8.5,
-    fontFamily: 'monospace',
-    fontWeight: '700',
-    color: THEME.text4,
+  relationChip: {
+    backgroundColor: '#1E2633',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  relationChipText: {
+    fontSize: 10,
+    color: '#A5B4FC',
+    fontWeight: '500',
   },
 });

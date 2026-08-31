@@ -59,6 +59,14 @@ export const mobileIdeasApi = {
     return res.data?.data || res.data;
   },
 
+  async promoteToNode(id: string, projectId: string, type: string = 'component'): Promise<any> {
+    const res = await mobileApiClient.post<any>(`/api/ideas/${id}/promote`, {
+      project_id: projectId,
+      type,
+    });
+    return res.data?.data || res.data;
+  },
+
   async deleteIdea(id: string): Promise<void> {
     await mobileApiClient.delete(`/api/ideas/${id}`);
   },

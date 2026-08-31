@@ -85,20 +85,20 @@ export const SettingsScreen: React.FC = () => {
 
         <View style={{ gap: 4 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: THEME.textMain, fontSize: 13, fontWeight: '700' }}>⚡ Synapse CLI</Text>
+            <Text style={{ color: '#F0F6FC', fontSize: 13, fontWeight: '700' }}>⚡ Synapse CLI</Text>
             <Text style={{ color: THEME.accent, fontSize: 11, fontFamily: 'monospace', backgroundColor: THEME.surface3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>npx @synapse/cli</Text>
           </View>
-          <Text style={{ color: THEME.textMuted, fontSize: 11, lineHeight: 16 }}>
+          <Text style={{ color: '#8B949E', fontSize: 11, lineHeight: 16 }}>
             Auto-tag commits with node IDs, quick drop from terminal, switch branches.
           </Text>
         </View>
 
         <View style={{ borderTopWidth: 1, borderTopColor: THEME.border, paddingTop: 10, marginTop: 8, gap: 4 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: THEME.textMain, fontSize: 13, fontWeight: '700' }}>🤖 Cursor & Claude (MCP)</Text>
+            <Text style={{ color: '#F0F6FC', fontSize: 13, fontWeight: '700' }}>🤖 Cursor & Claude (MCP)</Text>
             <Text style={{ color: '#818CF8', fontSize: 11, fontFamily: 'monospace', backgroundColor: THEME.surface3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>@synapse/mcp-server</Text>
           </View>
-          <Text style={{ color: THEME.textMuted, fontSize: 11, lineHeight: 16 }}>
+          <Text style={{ color: '#8B949E', fontSize: 11, lineHeight: 16 }}>
             Live architecture graph context, ADR search, and snippet drop for AI coding.
           </Text>
         </View>

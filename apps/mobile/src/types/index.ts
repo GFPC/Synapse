@@ -27,7 +27,7 @@ export type RelationType =
 export type UserRole = 'owner' | 'editor' | 'viewer';
 export type NodeVisibility = 'internal' | 'shared';
 
-export type MainTabType = 'sections' | 'tree' | 'metrics' | 'quickdrop' | 'ideas' | 'search' | 'settings' | 'account' | 'projects';
+export type MainTabType = 'nodes' | 'sections' | 'tree' | 'metrics' | 'quickdrop' | 'ideas' | 'search' | 'settings' | 'account' | 'projects';
 
 export type SortField = 'display_id' | 'updated_at' | 'title' | 'status';
 export type SortOrder = 'asc' | 'desc';

@@ -28,36 +28,36 @@ export const HeaderBar: React.FC<Props> = ({
         .join('')
         .slice(0, 2)
         .toUpperCase()
-    : 'LA';
+    : 'AM';
 
   return (
     <View style={styles.header}>
-      {/* Active Project Dropdown Switcher */}
+      {/* Active Project Selector */}
       <TouchableOpacity
-        style={styles.projectDropdown}
-        activeOpacity={0.7}
+        style={styles.projectSelector}
+        activeOpacity={0.75}
         onPress={onOpenProjectPicker}
       >
         <View
           style={[
             styles.statusDot,
-            { backgroundColor: isConnected ? THEME.status.ok : THEME.status.warn },
+            { backgroundColor: isConnected ? '#10B981' : '#F59E0B' },
           ]}
         />
         <Text style={styles.projectName} numberOfLines={1}>
           {activeProject ? activeProject.name : 'Select Project'}
         </Text>
-        <Text style={styles.chevron}>▾</Text>
+        <Text style={styles.chevron}>?</Text>
       </TouchableOpacity>
 
-      {/* Right Quick Actions */}
+      {/* Right Actions */}
       <View style={styles.rightActions}>
         <TouchableOpacity
-          style={styles.createButton}
+          style={styles.addButton}
           activeOpacity={0.7}
           onPress={onOpenCreateNode}
         >
-          <Text style={styles.createButtonIcon}>＋</Text>
+          <Text style={styles.addButtonIcon}>?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -77,23 +77,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    height: 46,
-    backgroundColor: THEME.surface1,
+    paddingHorizontal: 14,
+    height: 48,
+    backgroundColor: '#090D12',
     borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
+    borderBottomColor: '#1E2633',
   },
-  projectDropdown: {
+  projectSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: THEME.surface2,
+    backgroundColor: '#121820',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: THEME.border2,
-    maxWidth: '75%',
-    gap: 7,
+    borderColor: '#212A36',
+    maxWidth: '78%',
+    gap: 8,
   },
   statusDot: {
     width: 6,
@@ -101,51 +101,47 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   projectName: {
-    fontSize: 12.5,
+    color: '#F0F6FC',
+    fontSize: 13,
     fontWeight: '600',
-    color: THEME.text1,
     flexShrink: 1,
   },
   chevron: {
-    fontSize: 10,
-    color: THEME.text3,
-    marginLeft: 2,
+    color: '#8A8A94',
+    fontSize: 12,
   },
   rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  createButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 7,
-    backgroundColor: THEME.surface3,
-    borderWidth: 1,
-    borderColor: THEME.border2,
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#6366F1',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  createButtonIcon: {
-    fontSize: 15,
+  addButtonIcon: {
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: '600',
-    color: THEME.accentBright,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   profileAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: THEME.surface3,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#21262D',
     borderWidth: 1,
-    borderColor: THEME.border2,
+    borderColor: '#30363D',
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileAvatarText: {
-    fontFamily: 'monospace',
-    fontSize: 10,
+    color: '#F0F6FC',
+    fontSize: 11,
     fontWeight: '700',
-    color: THEME.text2,
   },
 });

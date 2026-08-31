@@ -6,50 +6,39 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
-import { SynapseNode, NodeType, SortField } from '../types';
+import { SynapseNode, NodeType } from '../types';
 import { SectionNodeCard } from '../components/nodes/SectionNodeCard';
-import { FilterPills, FilterItem } from '../components/ui/FilterPills';
-import { EmptyState } from '../components/ui/EmptyState';
 import { THEME, NODE_TYPE_CONFIG } from '../theme/tokens';
 
-const CATEGORY_ORDER: { type: NodeType; title: string; icon: string; color: string }[] = [
-  { type: 'component', title: 'Components & Services', icon: '⬡', color: '#F59E0B' },
-  { type: 'feature', title: 'Features & Capabilities', icon: '✦', color: '#3B82F6' },
-  { type: 'decision', title: 'Architecture Decisions (ADR)', icon: '◆', color: '#8B5CF6' },
-  { type: 'benchmark', title: 'Benchmarks & SLOs', icon: '📊', color: '#6366F1' },
-  { type: 'problem', title: 'Problems & Incidents', icon: '⚠️', color: '#EF4444' },
-  { type: 'solution', title: 'Solutions & Patterns', icon: '✓', color: '#10B981' },
-  { type: 'risk', title: 'Technical Risks', icon: '⚡', color: '#EC4899' },
-  { type: 'test', title: 'Tests & Verification', icon: '🧪', color: '#2DD4BF' },
-  { type: 'deployment', title: 'Deployment & Infra', icon: '▲', color: '#22C55E' },
-  { type: 'lesson', title: 'Lessons Learned', icon: '💡', color: '#C2B280' },
-  { type: 'note', title: 'Notes & Documentation', icon: '📝', color: '#A1A1AA' },
-  { type: 'link', title: 'External Links', icon: '🔗', color: '#7C8AA5' },
-  { type: 'log', title: 'Audit Logs', icon: '⏱', color: '#6B7280' },
+const CATEGORIES: { type: NodeType; label: string; icon: string; color: string }[] = [
+  { type: 'component', label: 'Components', icon: '?', color: '#F59E0B' },
+  { type: 'decision', label: 'Decisions (ADR)', icon: '?', color: '#8B5CF6' },
+  { type: 'benchmark', label: 'Benchmarks', icon: '??', color: '#6366F1' },
+  { type: 'solution', label: 'Solutions', icon: '?', color: '#10B981' },
+  { type: 'problem', label: 'Problems', icon: '??', color: '#EF4444' },
+  { type: 'risk', label: 'Risks', icon: '?', color: '#EC4899' },
+  { type: 'feature', label: 'Features', icon: '?', color: '#3B82F6' },
+  { type: 'test', label: 'Tests', icon: '??', color: '#2DD4BF' },
+  { type: 'deployment', label: 'Deployments', icon: '?', color: '#22C55E' },
+  { type: 'note', label: 'Notes', icon: '??', color: '#A1A1AA' },
 ];
 
 export const ArchitectureSectionsScreen: React.FC = () => {
   const {
     nodes,
     relations,
-    isLoading,
     activeProject,
-    activeTypeFilter,
-    setTypeFilter,
     selectNode,
     selectProject,
-    openCreateNodeModal,
-    openCreateRelationModal,
-    sortField,
-    sortOrder,
-    setSorting,
+    activeTypeFilter,
+    setTypeFilter,
   } = useSynapseMobileStore();
 
-  const [localSearch, setLocalSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -58,229 +47,178 @@ export const ArchitectureSectionsScreen: React.FC = () => {
     await selectProject(activeProject.id);
     setRefreshing(false);
   }, [activeProject, selectProject]);
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
-  const toggleCategory = (typeKey: string) => {
-    setCollapsedCategories((prev) => ({
-      ...prev,
-      [typeKey]: !prev[typeKey],
-    }));
-  };
-
-  const expandAll = () => setCollapsedCategories({});
-  const collapseAll = () => {
-    const all: Record<string, boolean> = {};
-    CATEGORY_ORDER.forEach((c) => (all[c.type] = true));
-    setCollapsedCategories(all);
-  };
-
-  // Build Filter Pills with live counts
-  const filterItems: FilterItem[] = useMemo(() => {
+  // Counts by Type
+  const typeCounts = useMemo(() => {
     const counts: Partial<Record<NodeType, number>> = {};
-    nodes.forEach((n: SynapseNode) => {
+    nodes.forEach((n) => {
       counts[n.type] = (counts[n.type] || 0) + 1;
     });
-
-    const items: FilterItem[] = [
-      { id: 'all', label: 'All', count: nodes.length },
-    ];
-
-    CATEGORY_ORDER.forEach((cat) => {
-      const c = counts[cat.type] || 0;
-      if (c > 0) {
-        items.push({
-          id: cat.type,
-          label: NODE_TYPE_CONFIG[cat.type].label,
-          count: c,
-        });
-      }
-    });
-
-    return items;
+    return counts;
   }, [nodes]);
 
-  // Filter & Sort Nodes
-  const processedNodes = useMemo(() => {
-    return nodes
-      .filter((n: SynapseNode) => {
-        if (activeTypeFilter !== 'all' && n.type !== activeTypeFilter) return false;
-        if (localSearch.trim()) {
-          const q = localSearch.toLowerCase();
-          const matchTitle = n.title.toLowerCase().includes(q);
-          const matchId = n.display_id.toLowerCase().includes(q);
-          const matchContent = n.content.toLowerCase().includes(q);
-          const matchTags = n.tags?.some((t: string) => t.toLowerCase().includes(q));
-          return matchTitle || matchId || matchContent || matchTags;
-        }
-        return true;
-      })
-      .sort((a: SynapseNode, b: SynapseNode) => {
-        let cmp = 0;
-        if (sortField === 'display_id') cmp = a.display_id.localeCompare(b.display_id);
-        else if (sortField === 'title') cmp = a.title.localeCompare(b.title);
-        else if (sortField === 'status') cmp = (a.status || '').localeCompare(b.status || '');
-        else {
-          const tA = a.updated_at ? new Date(a.updated_at).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
-          const tB = b.updated_at ? new Date(b.updated_at).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
-          cmp = tA - tB;
-        }
-
-        return sortOrder === 'asc' ? cmp : -cmp;
-      });
-  }, [nodes, activeTypeFilter, localSearch, sortField, sortOrder]);
-
-  // Group nodes by category
-  const groupedByCategory = useMemo(() => {
-    const map = new Map<NodeType, SynapseNode[]>();
-    processedNodes.forEach((n: SynapseNode) => {
-      if (!map.has(n.type)) map.set(n.type, []);
-      map.get(n.type)!.push(n);
+  // Counts by Status
+  const statusCounts = useMemo(() => {
+    let completed = 0;
+    let inProgress = 0;
+    let draft = 0;
+    nodes.forEach((n) => {
+      if (n.status === 'completed' || n.status === 'closed' || n.status === 'accepted') completed++;
+      else if (n.status === 'in_progress') inProgress++;
+      else draft++;
     });
-    return map;
-  }, [processedNodes]);
+    return { completed, inProgress, draft };
+  }, [nodes]);
+
+  // Filtered nodes
+  const filteredNodes = useMemo(() => {
+    return nodes.filter((n) => {
+      // 1. Type filter
+      if (activeTypeFilter !== 'all' && n.type !== activeTypeFilter) return false;
+
+      // 2. Status filter
+      if (statusFilter) {
+        if (statusFilter === 'completed' && n.status !== 'completed' && n.status !== 'closed' && n.status !== 'accepted') return false;
+        if (statusFilter === 'in_progress' && n.status !== 'in_progress') return false;
+        if (statusFilter === 'draft' && (n.status === 'completed' || n.status === 'in_progress' || n.status === 'closed')) return false;
+      }
+
+      // 3. Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = n.title.toLowerCase().includes(q);
+        const matchId = n.display_id.toLowerCase().includes(q);
+        const matchContent = n.content?.toLowerCase().includes(q);
+        const matchTags = n.tags?.some((t) => t.toLowerCase().includes(q));
+        return matchTitle || matchId || matchContent || matchTags;
+      }
+
+      return true;
+    });
+  }, [nodes, activeTypeFilter, statusFilter, searchQuery]);
 
   return (
     <View style={styles.container}>
-      {/* Category Pills Carousel */}
-      <FilterPills
-        filters={filterItems}
-        activeFilter={activeTypeFilter}
-        onSelectFilter={setTypeFilter}
-      />
-
-      {/* Sleek Search & Controls Bar */}
-      <View style={styles.controlBar}>
-        <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search nodes, tags, IDs..."
-            placeholderTextColor={THEME.text4}
-            value={localSearch}
-            onChangeText={setLocalSearch}
-            clearButtonMode="while-editing"
-          />
-          {localSearch ? (
-            <TouchableOpacity onPress={() => setLocalSearch('')}>
-              <Text style={styles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        <View style={styles.actionRow}>
-          <View style={styles.toggleButtons}>
-            <TouchableOpacity style={styles.toggleBtn} onPress={expandAll}>
-              <Text style={styles.toggleBtnText}>Expand</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.toggleBtn} onPress={collapseAll}>
-              <Text style={styles.toggleBtnText}>Collapse</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.sortBtn}
-            onPress={() => {
-              const nextSort: SortField =
-                sortField === 'updated_at'
-                  ? 'display_id'
-                  : sortField === 'display_id'
-                  ? 'title'
-                  : 'updated_at';
-              setSorting(nextSort);
-            }}
-          >
-            <Text style={styles.sortBtnText}>
-              Sort: {sortField === 'updated_at' ? 'Date' : sortField === 'display_id' ? 'ID' : 'Name'}
-            </Text>
+      {/* 1. Quick Search Bar */}
+      <View style={styles.searchBar}>
+        <Text style={styles.searchIcon}>??</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search architecture nodes, ADRs, tags..."
+          placeholderTextColor="#6B7280"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.clearIcon}>?</Text>
           </TouchableOpacity>
-        </View>
+        )}
       </View>
 
-      {/* Main Sections Scroll View */}
-      {isLoading && nodes.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={THEME.accent} />
-          <Text style={styles.loadingText}>Loading architecture...</Text>
-        </View>
-      ) : processedNodes.length === 0 ? (
-        <EmptyState
-          icon="🔍"
-          title="No Nodes Found"
-          description="Adjust your filter or create a new node"
-          actionText="＋ Create Node"
-          onAction={openCreateNodeModal}
-        />
-      ) : (
+      {/* 2. Horizontal Filter Pills */}
+      <View style={styles.filterScrollWrapper}>
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={THEME.accent}
-              colors={[THEME.accent]}
-            />
-          }
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterPills}
         >
-          {CATEGORY_ORDER.map((cat) => {
-            const catNodes = groupedByCategory.get(cat.type) || [];
-            if (catNodes.length === 0) return null;
+          <TouchableOpacity
+            style={[styles.pill, activeTypeFilter === 'all' && styles.pillActive]}
+            onPress={() => setTypeFilter('all')}
+          >
+            <Text style={[styles.pillText, activeTypeFilter === 'all' && styles.pillTextActive]}>
+              All ({nodes.length})
+            </Text>
+          </TouchableOpacity>
 
-            const isCollapsed = !!collapsedCategories[cat.type];
+          {CATEGORIES.map((cat) => {
+            const count = typeCounts[cat.type] || 0;
+            if (count === 0 && activeTypeFilter !== cat.type) return null;
+            const isSelected = activeTypeFilter === cat.type;
 
             return (
-              <View key={cat.type} style={styles.sectionCard}>
-                {/* Section Header */}
-                <TouchableOpacity
-                  style={styles.sectionHeader}
-                  activeOpacity={0.7}
-                  onPress={() => toggleCategory(cat.type)}
+              <TouchableOpacity
+                key={cat.type}
+                style={[
+                  styles.pill,
+                  isSelected && { backgroundColor: `${cat.color}25`, borderColor: cat.color },
+                ]}
+                onPress={() => setTypeFilter(isSelected ? 'all' : cat.type)}
+              >
+                <Text style={{ fontSize: 11 }}>{cat.icon}</Text>
+                <Text
+                  style={[
+                    styles.pillText,
+                    isSelected && { color: cat.color, fontWeight: '700' },
+                  ]}
                 >
-                  <View style={styles.sectionHeaderLeft}>
-                    <Text style={[styles.catIcon, { color: cat.color }]}>{cat.icon}</Text>
-                    <Text style={styles.sectionTitle}>{cat.title}</Text>
-                    <View style={styles.countBadge}>
-                      <Text style={[styles.countText, { color: cat.color }]}>
-                        {catNodes.length}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.chevron}>{isCollapsed ? '▸' : '▾'}</Text>
-                </TouchableOpacity>
-
-                {/* Node Cards List */}
-                {!isCollapsed && (
-                  <View style={styles.nodesList}>
-                    {catNodes.map((node: SynapseNode) => (
-                      <SectionNodeCard
-                        key={node.id}
-                        node={node}
-                        relations={relations}
-                        allNodes={nodes}
-                        onPress={() => selectNode(node.id, 'view')}
-                        onDoublePress={() => selectNode(node.id, 'edit')}
-                        onAddRelation={() => openCreateRelationModal(node)}
-                      />
-                    ))}
-                  </View>
-                )}
-              </View>
+                  {cat.label} ({count})
+                </Text>
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
-      )}
+      </View>
 
-      {/* Sleek Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.8}
-        onPress={openCreateNodeModal}
+      {/* 3. Status Filter Bar */}
+      <View style={styles.statusBar}>
+        <TouchableOpacity
+          style={[styles.statusChip, statusFilter === 'completed' && styles.statusChipActive]}
+          onPress={() => setStatusFilter(statusFilter === 'completed' ? null : 'completed')}
+        >
+          <View style={[styles.dot, { backgroundColor: '#10B981' }]} />
+          <Text style={styles.statusChipText}>{statusCounts.completed} Completed</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.statusChip, statusFilter === 'in_progress' && styles.statusChipActive]}
+          onPress={() => setStatusFilter(statusFilter === 'in_progress' ? null : 'in_progress')}
+        >
+          <View style={[styles.dot, { backgroundColor: '#38BDF8' }]} />
+          <Text style={styles.statusChipText}>{statusCounts.inProgress} In Progress</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.statusChip, statusFilter === 'draft' && styles.statusChipActive]}
+          onPress={() => setStatusFilter(statusFilter === 'draft' ? null : 'draft')}
+        >
+          <View style={[styles.dot, { backgroundColor: '#8A8A94' }]} />
+          <Text style={styles.statusChipText}>{statusCounts.draft} Draft</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 4. Node Card List */}
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366F1" />
+        }
       >
-        <Text style={styles.fabIcon}>＋</Text>
-      </TouchableOpacity>
+        {filteredNodes.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>??</Text>
+            <Text style={styles.emptyTitle}>No matching nodes</Text>
+            <Text style={styles.emptySubtitle}>
+              {searchQuery ? `No results for "${searchQuery}"` : 'Select a different filter or create a new node'}
+            </Text>
+          </View>
+        ) : (
+          filteredNodes.map((node) => (
+            <SectionNodeCard
+              key={node.id}
+              node={node}
+              relations={relations}
+              allNodes={nodes}
+              onPress={() => selectNode(node.id)}
+            />
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 };
@@ -288,167 +226,125 @@ export const ArchitectureSectionsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.bg,
+    backgroundColor: '#090D12',
   },
-  controlBar: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: THEME.surface1,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
-    gap: 6,
-  },
-  searchBox: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: THEME.surface2,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    height: 32,
+    backgroundColor: '#121820',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: THEME.border,
+    borderColor: '#212A36',
+    marginHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    height: 38,
   },
   searchIcon: {
-    fontSize: 11,
+    fontSize: 13,
     marginRight: 6,
-    opacity: 0.6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 11.5,
-    color: THEME.text1,
+    color: '#F0F6FC',
+    fontSize: 13,
     paddingVertical: 0,
   },
   clearIcon: {
-    fontSize: 11,
-    color: THEME.text3,
+    color: '#8A8A94',
+    fontSize: 12,
     paddingHorizontal: 4,
   },
-  actionRow: {
+  filterScrollWrapper: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E2633',
+    paddingBottom: 8,
+  },
+  filterPills: {
+    paddingHorizontal: 12,
+    gap: 6,
+  },
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  toggleButtons: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  toggleBtn: {
-    backgroundColor: THEME.surface2,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 4,
+    backgroundColor: '#121820',
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: THEME.border,
+    borderColor: '#212A36',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    gap: 5,
   },
-  toggleBtnText: {
-    fontSize: 10,
-    color: THEME.text3,
+  pillActive: {
+    backgroundColor: '#6366F125',
+    borderColor: '#6366F1',
+  },
+  pillText: {
+    color: '#8A8A94',
+    fontSize: 12,
     fontWeight: '500',
   },
-  sortBtn: {
-    backgroundColor: THEME.surface2,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: THEME.border,
+  pillTextActive: {
+    color: '#F0F6FC',
+    fontWeight: '700',
   },
-  sortBtnText: {
-    fontSize: 10,
-    fontFamily: 'monospace',
-    color: THEME.accentBright,
-    fontWeight: '600',
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 10,
-    paddingBottom: 80,
-    gap: 8,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  loadingText: {
-    fontSize: 12,
-    color: THEME.text3,
-  },
-  sectionCard: {
-    backgroundColor: THEME.surface1,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: THEME.border,
-    overflow: 'hidden',
-  },
-  sectionHeader: {
+  statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: THEME.surface1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#0E131A',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+    borderBottomColor: '#1E2633',
+    gap: 12,
   },
-  sectionHeaderLeft: {
+  statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  statusChipActive: {
+    backgroundColor: '#212A36',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusChipText: {
+    color: '#8A8A94',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  list: {
     flex: 1,
   },
-  catIcon: {
-    fontSize: 12,
-    fontWeight: '700',
+  listContent: {
+    padding: 12,
+    paddingBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: THEME.text1,
-  },
-  countBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 3,
-    backgroundColor: THEME.surface3,
-  },
-  countText: {
-    fontSize: 9.5,
-    fontFamily: 'monospace',
-    fontWeight: '700',
-  },
-  chevron: {
-    fontSize: 12,
-    color: THEME.text4,
-  },
-  nodesList: {
-    padding: 8,
-    gap: 6,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: THEME.accent,
+  emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 6,
+    paddingVertical: 60,
   },
-  fabIcon: {
-    fontSize: 22,
+  emptyIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    color: '#F0F6FC',
+    fontSize: 15,
     fontWeight: '600',
-    color: '#000',
-    marginTop: -2,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    color: '#8A8A94',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });

@@ -7,16 +7,14 @@ import {
   Modal,
   Text,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { useSynapseMobileStore } from '../store/synapseMobileStore';
 import { HeaderBar } from '../components/ui/HeaderBar';
 import { BottomTabBar } from '../components/navigation/BottomTabBar';
 import { ArchitectureSectionsScreen } from './ArchitectureSectionsScreen';
-import { RelationsTreeScreen } from './RelationsTreeScreen';
-import { MetricsAdrScreen } from './MetricsAdrScreen';
 import { QuickDropScreen } from './QuickDropScreen';
 import { IdeasScreen } from './IdeasScreen';
-import { GlobalSearchScreen } from './GlobalSearchScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { AccountScreen } from './AccountScreen';
 import { NodeDetailModal } from '../components/drawer/NodeDetailModal';
@@ -56,9 +54,9 @@ export const MainAppNavigator: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={THEME.surface1} />
+      <StatusBar barStyle="light-content" backgroundColor="#090D12" />
 
-      {/* Persistent App Header */}
+      {/* 1. Header Bar */}
       <HeaderBar
         activeProject={activeProject}
         isConnected={isConnected}
@@ -66,89 +64,78 @@ export const MainAppNavigator: React.FC = () => {
         currentUser={currentUser}
         onOpenProjectPicker={() => setIsProjectPickerOpen(true)}
         onOpenCreateNode={openCreateNodeModal}
-        onOpenAccount={() => switchTab(currentTab === 'account' ? 'sections' : 'account')}
+        onOpenAccount={() => switchTab(currentTab === 'account' ? 'nodes' : 'account')}
       />
 
-      {/* Active Screen Tab View */}
+      {/* 2. Main Screen View */}
       <View style={styles.screenContainer}>
-        {currentTab === 'sections' && <ArchitectureSectionsScreen />}
-        {currentTab === 'tree' && <RelationsTreeScreen />}
+        {(currentTab === 'nodes' || currentTab === 'sections' || currentTab === 'tree' || currentTab === 'metrics') && (
+          <ArchitectureSectionsScreen />
+        )}
         {currentTab === 'quickdrop' && <QuickDropScreen />}
         {currentTab === 'ideas' && <IdeasScreen />}
-        {currentTab === 'metrics' && <MetricsAdrScreen />}
-        {currentTab === 'search' && <GlobalSearchScreen />}
         {currentTab === 'settings' && <SettingsScreen />}
         {currentTab === 'account' && <AccountScreen />}
       </View>
 
-      {/* Bottom Tab Bar Navigation */}
+      {/* 3. Bottom Tab Bar (4 clean tabs) */}
       <BottomTabBar
         currentTab={currentTab}
         onSelectTab={switchTab}
         nodesCount={nodes.length}
       />
 
-      {/* Global Node Inspector Modal */}
+      {/* 4. Global Modals */}
       <NodeDetailModal
         node={selectedNode}
         visible={selectedNode !== null}
         onClose={() => selectNode(null)}
       />
 
-      {/* Global Create Node Modal */}
       <CreateNodeModal
         visible={isCreateNodeModalOpen}
         onClose={closeCreateNodeModal}
       />
 
-      {/* Global Create Relation Modal */}
       <CreateRelationModal
         visible={isCreateRelationModalOpen}
         onClose={closeCreateRelationModal}
       />
 
-      {/* Quick Project Picker Modal */}
+      {/* Project Switcher Modal */}
       <Modal
         visible={isProjectPickerOpen}
+        transparent
         animationType="fade"
-        transparent={true}
         onRequestClose={() => setIsProjectPickerOpen(false)}
       >
         <TouchableOpacity
-          style={styles.pickerOverlay}
+          style={styles.modalBackdrop}
           activeOpacity={1}
           onPress={() => setIsProjectPickerOpen(false)}
         >
-          <View style={styles.pickerModal}>
-            <Text style={styles.pickerTitle}>SELECT ARCHITECTURE SCHEMA</Text>
-            {projects.map((proj: Project) => {
-              const isCurrent = activeProject?.id === proj.id;
-              return (
-                <TouchableOpacity
-                  key={proj.id}
-                  style={[
-                    styles.pickerItem,
-                    isCurrent && styles.pickerItemActive,
-                  ]}
-                  onPress={() => {
-                    selectProject(proj.id);
-                    setIsProjectPickerOpen(false);
-                  }}
-                >
-                  <View style={styles.pickerItemHead}>
-                    <Text style={styles.pickerItemIcon}>📁</Text>
-                    <Text style={styles.pickerItemName} numberOfLines={1}>
-                      {proj.name}
+          <View style={styles.pickerCard}>
+            <Text style={styles.pickerTitle}>SELECT PROJECT</Text>
+            <ScrollView style={{ maxHeight: 300 }}>
+              {projects.map((p: Project) => {
+                const isSelected = activeProject?.id === p.id;
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.projectItem, isSelected && styles.projectItemActive]}
+                    onPress={() => {
+                      selectProject(p.id);
+                      setIsProjectPickerOpen(false);
+                    }}
+                  >
+                    <Text style={[styles.projectItemName, isSelected && styles.projectItemNameActive]}>
+                      {p.name}
                     </Text>
-                  </View>
-                  {proj.description ? (
-                    <Text style={styles.pickerItemDesc} numberOfLines={2}>
-                      {proj.description}
-                    </Text>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
+                    {isSelected && <Text style={styles.checkIcon}>?</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -159,61 +146,58 @@ export const MainAppNavigator: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: THEME.bg,
+    backgroundColor: '#090D12',
   },
   screenContainer: {
     flex: 1,
+    backgroundColor: '#090D12',
   },
-  pickerOverlay: {
+  modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    alignItems: 'center',
+    padding: 20,
   },
-  pickerModal: {
-    backgroundColor: THEME.surface1,
-    borderRadius: THEME.radius.lg,
+  pickerCard: {
+    backgroundColor: '#121820',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: THEME.border2,
+    borderColor: '#212A36',
+    width: '100%',
+    maxWidth: 360,
     padding: 16,
-    gap: 10,
   },
   pickerTitle: {
-    fontFamily: 'monospace',
-    fontSize: 10,
+    color: '#8A8A94',
+    fontSize: 11,
     fontWeight: '700',
-    color: THEME.text4,
-    marginBottom: 4,
+    letterSpacing: 0.5,
+    marginBottom: 12,
   },
-  pickerItem: {
-    backgroundColor: THEME.surface2,
-    padding: 12,
-    borderRadius: THEME.radius.md,
-    borderWidth: 1,
-    borderColor: THEME.border,
-  },
-  pickerItemActive: {
-    borderColor: THEME.accent,
-    backgroundColor: THEME.accentDim,
-  },
-  pickerItemHead: {
+  projectItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     marginBottom: 4,
   },
-  pickerItemIcon: {
+  projectItemActive: {
+    backgroundColor: '#1E2633',
+  },
+  projectItemName: {
+    color: '#F0F6FC',
     fontSize: 14,
+    fontWeight: '500',
   },
-  pickerItemName: {
-    fontSize: 13,
+  projectItemNameActive: {
+    color: '#6366F1',
     fontWeight: '700',
-    color: THEME.text1,
-    flex: 1,
   },
-  pickerItemDesc: {
-    fontSize: 11,
-    color: THEME.text3,
-    lineHeight: 15,
+  checkIcon: {
+    color: '#6366F1',
+    fontWeight: '700',
   },
 });

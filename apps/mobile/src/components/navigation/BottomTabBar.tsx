@@ -1,14 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { MainTabType } from '../../types';
 import { THEME } from '../../theme/tokens';
 import {
   SectionsNavIcon,
-  RelationsNavIcon,
   QuickDropNavIcon,
   IdeasNavIcon,
-  MetricsNavIcon,
-  SearchNavIcon,
   SettingsNavIcon,
 } from '../icons/NavIcons';
 
@@ -32,15 +29,10 @@ export const BottomTabBar: React.FC<Props> = ({
 }) => {
   const tabs: TabItem[] = [
     {
-      id: 'sections',
-      label: 'Sections',
+      id: 'nodes' as MainTabType,
+      label: 'Architecture',
       renderIcon: (p) => <SectionsNavIcon {...p} />,
       badge: nodesCount,
-    },
-    {
-      id: 'tree',
-      label: 'Relations',
-      renderIcon: (p) => <RelationsNavIcon {...p} />,
     },
     {
       id: 'quickdrop',
@@ -53,11 +45,6 @@ export const BottomTabBar: React.FC<Props> = ({
       renderIcon: (p) => <IdeasNavIcon {...p} />,
     },
     {
-      id: 'metrics',
-      label: 'ADR/Metrics',
-      renderIcon: (p) => <MetricsNavIcon {...p} />,
-    },
-    {
       id: 'settings',
       label: 'Settings',
       renderIcon: (p) => <SettingsNavIcon {...p} />,
@@ -68,9 +55,11 @@ export const BottomTabBar: React.FC<Props> = ({
     <View style={styles.container}>
       <View style={styles.tabBar}>
         {tabs.map((tab) => {
-          const isActive = currentTab === tab.id;
-          const activeColor = THEME.accentBright;
-          const inactiveColor = THEME.text3;
+          const isActive =
+            currentTab === tab.id ||
+            (tab.id === 'nodes' && (currentTab === 'sections' || currentTab === 'tree' || currentTab === 'metrics'));
+          const activeColor = THEME.accentBright || '#6366F1';
+          const inactiveColor = '#8A8A94';
           const color = isActive ? activeColor : inactiveColor;
 
           return (
@@ -81,7 +70,7 @@ export const BottomTabBar: React.FC<Props> = ({
               onPress={() => onSelectTab(tab.id)}
             >
               <View style={styles.iconWrapper}>
-                {tab.renderIcon({ color, focused: isActive, size: 20 })}
+                {tab.renderIcon({ color, focused: isActive, size: 22 })}
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{tab.badge}</Text>
@@ -96,6 +85,7 @@ export const BottomTabBar: React.FC<Props> = ({
               >
                 {tab.label}
               </Text>
+              {isActive && <View style={styles.activeIndicator} />}
             </TouchableOpacity>
           );
         })}
@@ -106,55 +96,65 @@ export const BottomTabBar: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.surface1,
+    backgroundColor: '#090D12',
     borderTopWidth: 1,
-    borderTopColor: THEME.border,
-    paddingBottom: 16,
+    borderTopColor: '#1E2633',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 6,
     paddingTop: 6,
   },
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 4,
+    height: 52,
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 4,
+    position: 'relative',
   },
   iconWrapper: {
     position: 'relative',
-    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 26,
     marginBottom: 3,
   },
   badge: {
     position: 'absolute',
-    top: -3,
+    top: -4,
     right: -10,
-    backgroundColor: THEME.accent,
-    borderRadius: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 0.5,
-    minWidth: 14,
+    backgroundColor: '#6366F1',
+    borderRadius: 9,
+    minWidth: 16,
+    height: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   badgeText: {
-    fontSize: 8,
-    fontFamily: 'monospace',
-    fontWeight: '800',
-    color: '#000',
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
   labelText: {
-    fontSize: 9.5,
+    fontSize: 11,
     fontWeight: '500',
-    color: THEME.text3,
+    color: '#8A8A94',
+    letterSpacing: 0.2,
   },
   labelTextActive: {
-    color: THEME.accentBright,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -6,
+    width: 16,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#6366F1',
   },
 });
