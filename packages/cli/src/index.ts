@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import chalk from 'chalk';
 import { initCommand } from './commands/init';
 import { statusCommand } from './commands/status';
 import { listCommand } from './commands/list';
@@ -10,6 +9,8 @@ import { finishCommand } from './commands/finish';
 import { dropCommand, dropsCommand } from './commands/drop';
 import { ideaCommand } from './commands/idea';
 import { openCommand } from './commands/open';
+import { benchCommand } from './commands/bench';
+import { linkCommand } from './commands/link';
 
 const program = new Command();
 
@@ -71,6 +72,18 @@ program
   .description('Capture an idea or architectural note from terminal')
   .option('-c, --content <content>', 'Detailed body text')
   .action(ideaCommand);
+
+program
+  .command('bench')
+  .description('Attach benchmark output from stdin or file to a benchmark node')
+  .option('-n, --node <id>', 'Target benchmark node ID (e.g. B-001)')
+  .option('-f, --file <path>', 'Benchmark output file path')
+  .action(benchCommand);
+
+program
+  .command('link <id>')
+  .description('Link current git branch to an architectural node')
+  .action(linkCommand);
 
 program
   .command('open [id]')

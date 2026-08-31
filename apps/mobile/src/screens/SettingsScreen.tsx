@@ -22,6 +22,7 @@ export const SettingsScreen: React.FC = () => {
     serverLatencyMs,
     checkServerHealth,
     switchTab,
+    currentUser,
   } = useSynapseMobileStore();
 
   const [apiUrl, setApiUrl] = useState(settings.apiBaseUrl);
@@ -37,6 +38,10 @@ export const SettingsScreen: React.FC = () => {
     await clearLocalCache();
     Alert.alert('Cache Cleared', 'Local schema and node cache has been wiped.');
   };
+
+  const avatarInitials = currentUser?.name
+    ? currentUser.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase()
+    : 'AM';
 
   return (
     <ScrollView
@@ -59,14 +64,44 @@ export const SettingsScreen: React.FC = () => {
           onPress={() => switchTab('account')}
         >
           <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>LA</Text>
+            <Text style={styles.profileAvatarText}>{avatarInitials}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>Lead System Architect</Text>
-            <Text style={styles.profileEmail}>architect@synapse.local • Role: Owner</Text>
+            <Text style={styles.profileName}>{currentUser?.name || 'Alex Mercer'}</Text>
+            <Text style={styles.profileEmail}>{currentUser?.email || 'alex@synapse.dev'} • Role: Owner</Text>
           </View>
           <Text style={styles.profileChevron}>›</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* SECTION: Developer CLI & AI MCP Integration */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.sectionTitle}>DEVELOPER TOOLS & AI MCP</Text>
+          <View style={{ backgroundColor: 'rgba(16,185,129,0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(16,185,129,0.3)' }}>
+            <Text style={{ color: '#10B981', fontSize: 10, fontWeight: '700' }}>CONNECTED</Text>
+          </View>
+        </View>
+
+        <View style={{ gap: 4 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ color: THEME.textMain, fontSize: 13, fontWeight: '700' }}>⚡ Synapse CLI</Text>
+            <Text style={{ color: THEME.accent, fontSize: 11, fontFamily: 'monospace', backgroundColor: THEME.surface3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>npx @synapse/cli</Text>
+          </View>
+          <Text style={{ color: THEME.textMuted, fontSize: 11, lineHeight: 16 }}>
+            Auto-tag commits with node IDs, quick drop from terminal, switch branches.
+          </Text>
+        </View>
+
+        <View style={{ borderTopWidth: 1, borderTopColor: THEME.border, paddingTop: 10, marginTop: 8, gap: 4 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ color: THEME.textMain, fontSize: 13, fontWeight: '700' }}>🤖 Cursor & Claude (MCP)</Text>
+            <Text style={{ color: '#818CF8', fontSize: 11, fontFamily: 'monospace', backgroundColor: THEME.surface3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>@synapse/mcp-server</Text>
+          </View>
+          <Text style={{ color: THEME.textMuted, fontSize: 11, lineHeight: 16 }}>
+            Live architecture graph context, ADR search, and snippet drop for AI coding.
+          </Text>
+        </View>
       </View>
 
       {/* SECTION 1: Production Server & Gateway */}

@@ -15,6 +15,18 @@ type ApiKeyValidatorFunc func(ctx context.Context, key string) (userID, email st
 func AuthMiddleware(secret string, apiKeyValidator ApiKeyValidatorFunc) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			reqPath := c.Request().URL.Path
+
+			// Public route skipper: webhooks, health, auth login/reg
+			if strings.Contains(reqPath, "webhook") ||
+				strings.Contains(reqPath, "health") ||
+				strings.Contains(reqPath, "metrics") ||
+				strings.HasSuffix(reqPath, "/login") ||
+				strings.HasSuffix(reqPath, "/register") ||
+				strings.HasSuffix(reqPath, "/refresh") {
+				return next(c)
+			}
+
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
 				return response.NewAppError(http.StatusUnauthorized, "UNAUTHORIZED", "Missing token")
