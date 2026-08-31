@@ -8,7 +8,13 @@ export type WsEventType =
   | 'comment_added'
   | 'node_locked'
   | 'node_unlocked'
-  | 'user_online';
+  | 'user_online'
+  | 'quick_drop_created'
+  | 'quick_drop_deleted'
+  | 'quick_drop_pinned'
+  | 'idea_created'
+  | 'idea_updated'
+  | 'idea_deleted';
 
 export interface WsEvent<T = any> {
   type: WsEventType;

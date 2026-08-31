@@ -41,14 +41,19 @@ export const BottomTabBar: React.FC<Props> = ({
       renderIcon: (p) => <RelationsNavIcon {...p} />,
     },
     {
-      id: 'metrics',
-      label: 'ADR & Metrics',
-      renderIcon: (p) => <MetricsNavIcon {...p} />,
+      id: 'quickdrop',
+      label: 'Quick Drop',
+      renderIcon: () => <Text style={{ fontSize: 16 }}>📋</Text>,
     },
     {
-      id: 'search',
-      label: 'Search',
-      renderIcon: (p) => <SearchNavIcon {...p} />,
+      id: 'ideas',
+      label: 'Ideas',
+      renderIcon: () => <Text style={{ fontSize: 16 }}>💡</Text>,
+    },
+    {
+      id: 'metrics',
+      label: 'ADR/Metrics',
+      renderIcon: (p) => <MetricsNavIcon {...p} />,
     },
     {
       id: 'settings',

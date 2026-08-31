@@ -14,6 +14,8 @@ import { BottomTabBar } from '../components/navigation/BottomTabBar';
 import { ArchitectureSectionsScreen } from './ArchitectureSectionsScreen';
 import { RelationsTreeScreen } from './RelationsTreeScreen';
 import { MetricsAdrScreen } from './MetricsAdrScreen';
+import { QuickDropScreen } from './QuickDropScreen';
+import { IdeasScreen } from './IdeasScreen';
 import { GlobalSearchScreen } from './GlobalSearchScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { AccountScreen } from './AccountScreen';
@@ -71,6 +73,8 @@ export const MainAppNavigator: React.FC = () => {
       <View style={styles.screenContainer}>
         {currentTab === 'sections' && <ArchitectureSectionsScreen />}
         {currentTab === 'tree' && <RelationsTreeScreen />}
+        {currentTab === 'quickdrop' && <QuickDropScreen />}
+        {currentTab === 'ideas' && <IdeasScreen />}
         {currentTab === 'metrics' && <MetricsAdrScreen />}
         {currentTab === 'search' && <GlobalSearchScreen />}
         {currentTab === 'settings' && <SettingsScreen />}

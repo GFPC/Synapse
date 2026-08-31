@@ -106,6 +106,9 @@ interface SynapseMobileState {
   applyAutoLayout: (type: 'hierarchical' | 'force') => void;
 }
 
+let activeWsUnsub: (() => void) | null = null;
+let activeSyncInterval: any = null;
+
 export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
   currentTab: 'sections',
   switchTab: (tab) => set({ currentTab: tab }),
@@ -180,15 +183,14 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
       }
       await get().fetchProjects();
 
-      // Start silent background auto-sync polling every 4 seconds as safety net
-      if (!(global as any).__synapseSyncInterval) {
-        (global as any).__synapseSyncInterval = setInterval(() => {
-          const actProj = get().activeProject;
-          if (actProj && get().isConnected) {
-            get().syncNodesSilently(actProj.id);
-          }
-        }, 4000);
-      }
+      // Reliable 3-second auto-sync loop
+      if (activeSyncInterval) clearInterval(activeSyncInterval);
+      activeSyncInterval = setInterval(() => {
+        const actProj = get().activeProject;
+        if (actProj && get().isConnected) {
+          get().syncNodesSilently(actProj.id);
+        }
+      }, 3000);
     } catch {
       set({ isConnected: false });
     } finally {
@@ -200,36 +202,64 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
     try {
       const nodes = await nodesApi.listByProject(projectId);
       if (get().activeProject?.id !== projectId) return;
-      set({ nodes });
+      
+      const currentNodes = get().nodes;
+      const hasChanges =
+        nodes.length !== currentNodes.length ||
+        nodes.some((n) => {
+          const existing = currentNodes.find((cn) => cn.id === n.id);
+          return (
+            !existing ||
+            existing.title !== n.title ||
+            existing.content !== n.content ||
+            existing.status !== n.status ||
+            existing.updated_at !== n.updated_at
+          );
+        });
+
+      if (hasChanges) {
+        synapseCore.updateSpatialIndex(nodes);
+        set({ nodes });
+      }
     } catch {
       // Silent catch for background polling
     }
   },
 
   initWebSocket: () => {
-    if ((global as any).__synapseWsSubscribed) return;
-    (global as any).__synapseWsSubscribed = true;
+    if (activeWsUnsub) {
+      activeWsUnsub();
+      activeWsUnsub = null;
+    }
 
-    synapseWS.subscribe((event: WSEvent) => {
+    activeWsUnsub = synapseWS.subscribe((event: WSEvent) => {
       if (event.type === 'node_created' && event.data) {
         const newNode = event.data;
         set((s) => {
           if (newNode.project_id && s.activeProject && newNode.project_id !== s.activeProject.id) {
             return s;
           }
-          return { nodes: [newNode, ...s.nodes.filter((n) => n.id !== newNode.id)] };
+          const next = [newNode, ...s.nodes.filter((n) => n.id !== newNode.id)];
+          synapseCore.updateSpatialIndex(next);
+          return { nodes: next };
         });
       } else if (event.type === 'node_updated' && event.data) {
         const updated = event.data;
-        set((s) => ({
-          nodes: s.nodes.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)),
-        }));
+        set((s) => {
+          const next = s.nodes.map((n) => (n.id === updated.id ? { ...n, ...updated } : n));
+          synapseCore.updateSpatialIndex(next);
+          return { nodes: next };
+        });
       } else if (event.type === 'node_deleted' && event.data) {
         const delId = event.data?.id || event.data;
-        set((s) => ({ nodes: s.nodes.filter((n) => n.id !== delId) }));
+        set((s) => {
+          const next = s.nodes.filter((n) => n.id !== delId);
+          synapseCore.updateSpatialIndex(next);
+          return { nodes: next };
+        });
       } else if (event.type === 'relation_created' && event.data) {
         const newRel = event.data;
-        set((s) => ({ relations: [...s.relations, newRel] }));
+        set((s) => ({ relations: [...s.relations.filter((r) => r.id !== newRel.id), newRel] }));
       } else if (event.type === 'relation_deleted' && event.data) {
         const relId = event.data?.id || event.data;
         set((s) => ({ relations: s.relations.filter((r) => r.id !== relId) }));

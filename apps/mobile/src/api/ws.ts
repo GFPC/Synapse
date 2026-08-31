@@ -8,7 +8,13 @@ export type WSEventType =
   | 'node_unlocked'
   | 'relation_created'
   | 'relation_deleted'
-  | 'comment_added';
+  | 'comment_added'
+  | 'quick_drop_created'
+  | 'quick_drop_deleted'
+  | 'quick_drop_pinned'
+  | 'idea_created'
+  | 'idea_updated'
+  | 'idea_deleted';
 
 export interface WSEvent {
   type: WSEventType;
@@ -126,3 +132,4 @@ class SynapseWebSocketClient {
 }
 
 export const synapseWS = new SynapseWebSocketClient();
+export const wsService = synapseWS;

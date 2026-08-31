@@ -119,7 +119,11 @@ export const ArchitectureSectionsScreen: React.FC = () => {
         if (sortField === 'display_id') cmp = a.display_id.localeCompare(b.display_id);
         else if (sortField === 'title') cmp = a.title.localeCompare(b.title);
         else if (sortField === 'status') cmp = (a.status || '').localeCompare(b.status || '');
-        else cmp = (a.updated_at || 0) - (b.updated_at || 0);
+        else {
+          const tA = a.updated_at ? new Date(a.updated_at).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
+          const tB = b.updated_at ? new Date(b.updated_at).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
+          cmp = tA - tB;
+        }
 
         return sortOrder === 'asc' ? cmp : -cmp;
       });

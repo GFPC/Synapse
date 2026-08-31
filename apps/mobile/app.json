@@ -19,6 +19,11 @@
       "package": "com.gfpc.synapse",
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "VIBRATE"]
     },
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "NEVER"
+    },
+    "newArchEnabled": true,
     "plugins": []
   }
 }

@@ -6,6 +6,8 @@ import { ProjectsDirectoryScreen } from './components/projects/ProjectsDirectory
 import { SynapseCanvasView } from './components/canvas/SynapseCanvasView';
 import { SynapseSectionsView } from './components/sections/SynapseSectionsView';
 import { SettingsScreen } from './components/settings/SettingsScreen';
+import { QuickDropView } from './components/quickdrop/QuickDropView';
+import { IdeasBoardView } from './components/ideas/IdeasBoardView';
 import { NodeDetailDrawer } from './components/detail/NodeDetailDrawer';
 import { CreateNodeModal } from './components/modals/CreateNodeModal';
 import { CreateRelationModal } from './components/modals/CreateRelationModal';
@@ -15,7 +17,7 @@ import { AuthModal } from './components/modals/AuthModal';
 
 export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<
-    'dashboard' | 'projects' | 'project-view' | 'search' | 'settings'
+    'dashboard' | 'projects' | 'project-view' | 'ideas' | 'quick-drop' | 'search' | 'settings'
   >('project-view');
 
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
@@ -63,6 +65,10 @@ export const App: React.FC = () => {
             {viewMode === 'canvas' ? <SynapseCanvasView /> : <SynapseSectionsView />}
           </div>
         )}
+
+        {currentScreen === 'ideas' && <IdeasBoardView />}
+
+        {currentScreen === 'quick-drop' && <QuickDropView />}
 
         {currentScreen === 'settings' && <SettingsScreen />}
 

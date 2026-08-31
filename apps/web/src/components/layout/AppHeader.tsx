@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 
 interface AppHeaderProps {
-  currentScreen: 'dashboard' | 'projects' | 'project-view' | 'search' | 'settings';
-  setCurrentScreen: (screen: 'dashboard' | 'projects' | 'project-view' | 'search' | 'settings') => void;
+  currentScreen: 'dashboard' | 'projects' | 'project-view' | 'ideas' | 'quick-drop' | 'search' | 'settings';
+  setCurrentScreen: (screen: 'dashboard' | 'projects' | 'project-view' | 'ideas' | 'quick-drop' | 'search' | 'settings') => void;
   onOpenCreateProject: () => void;
 }
 
@@ -179,6 +179,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           }`}
         >
           Граф / Холст
+        </button>
+        <button
+          onClick={() => setCurrentScreen('ideas')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+            currentScreen === 'ideas'
+              ? 'bg-surface-2 text-amber-400 font-bold'
+              : 'text-text-muted hover:text-text-main'
+          }`}
+        >
+          <span>💡</span>
+          <span>Идеи & Заметки</span>
+        </button>
+        <button
+          onClick={() => setCurrentScreen('quick-drop')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+            currentScreen === 'quick-drop'
+              ? 'bg-surface-2 text-indigo-400 font-bold'
+              : 'text-text-muted hover:text-text-main'
+          }`}
+        >
+          <span>📋</span>
+          <span>Quick Drop (Ctrl+V)</span>
         </button>
         <button
           onClick={() => setCurrentScreen('settings')}
