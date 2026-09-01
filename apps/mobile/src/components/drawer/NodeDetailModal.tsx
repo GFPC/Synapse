@@ -64,7 +64,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
   const conf = NODE_TYPE_CONFIG[node.type as NodeType] || {
     label: node.type,
     color: '#8A8A94',
-    icon: '?',
+    icon: '??',
   };
 
   const nodeComments = commentsMap[node.id] || [];
@@ -349,7 +349,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
 
                         <View style={{ flex: 1 }}>
                           <Text style={styles.relTargetId}>
-                            [{targetNode ? targetNode.display_id : '?'}] {targetNode ? targetNode.title : targetId}
+                            [{targetNode ? targetNode.display_id : '...'}] {targetNode ? targetNode.title : targetId}
                           </Text>
                         </View>
                         <Text style={styles.chevron}>?</Text>

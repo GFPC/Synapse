@@ -14,15 +14,15 @@ import { SectionNodeCard } from '../components/nodes/SectionNodeCard';
 import { THEME, NODE_TYPE_CONFIG } from '../theme/tokens';
 
 const CATEGORIES: { type: NodeType; label: string; icon: string; color: string }[] = [
-  { type: 'component', label: 'Components', icon: '?', color: '#F59E0B' },
-  { type: 'decision', label: 'Decisions (ADR)', icon: '?', color: '#8B5CF6' },
+  { type: 'component', label: 'Components', icon: '??', color: '#F59E0B' },
+  { type: 'decision', label: 'Decisions (ADR)', icon: '??', color: '#8B5CF6' },
   { type: 'benchmark', label: 'Benchmarks', icon: '??', color: '#6366F1' },
-  { type: 'solution', label: 'Solutions', icon: '?', color: '#10B981' },
+  { type: 'solution', label: 'Solutions', icon: '??', color: '#10B981' },
   { type: 'problem', label: 'Problems', icon: '??', color: '#EF4444' },
   { type: 'risk', label: 'Risks', icon: '?', color: '#EC4899' },
   { type: 'feature', label: 'Features', icon: '?', color: '#3B82F6' },
   { type: 'test', label: 'Tests', icon: '??', color: '#2DD4BF' },
-  { type: 'deployment', label: 'Deployments', icon: '?', color: '#22C55E' },
+  { type: 'deployment', label: 'Deployments', icon: '??', color: '#22C55E' },
   { type: 'note', label: 'Notes', icon: '??', color: '#A1A1AA' },
 ];
 

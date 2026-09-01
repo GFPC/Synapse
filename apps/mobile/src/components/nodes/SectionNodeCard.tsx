@@ -98,7 +98,7 @@ export const SectionNodeCard: React.FC<Props> = ({
         {nodeRelations.length > 0 && (
           <View style={styles.relationChip}>
             <Text style={styles.relationChipText}>
-              ?? {nodeRelations.length} {nodeRelations.length === 1 ? 'link' : 'links'}
+              ??? {nodeRelations.length} {nodeRelations.length === 1 ? 'link' : 'links'}
             </Text>
           </View>
         )}

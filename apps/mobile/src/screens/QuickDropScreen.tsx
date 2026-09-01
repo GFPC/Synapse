@@ -115,7 +115,7 @@ export const QuickDropScreen: React.FC = () => {
         />
         <View style={styles.inputActions}>
           <TouchableOpacity style={styles.pasteBtn} onPress={handlePaste}>
-            <Text style={styles.pasteBtnText}>?? Paste</Text>
+            <Text style={styles.pasteBtnText}>??? Paste</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}

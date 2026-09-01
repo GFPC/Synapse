@@ -115,7 +115,7 @@ export const IdeasScreen: React.FC = () => {
           style={styles.newBtn}
           onPress={() => setIsCreating(!isCreating)}
         >
-          <Text style={styles.newBtnText}>{isCreating ? '? Cancel' : '? New Idea'}</Text>
+          <Text style={styles.newBtnText}>{isCreating ? '? Cancel' : '+ New Idea'}</Text>
         </TouchableOpacity>
       </View>
 
