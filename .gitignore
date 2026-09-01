@@ -38,3 +38,7 @@ data/uploads/
 *.swp
 *.swo
 *.iml
+
+# Synapse
+.synapse-key
+.synapse-context
