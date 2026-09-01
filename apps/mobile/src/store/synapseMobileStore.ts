@@ -168,12 +168,8 @@ export const useSynapseMobileStore = create<SynapseMobileState>((set, get) => ({
     try {
       await get().checkServerHealth();
 
-      const userAccessToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhYmQ1NzMtZmVlMi00MmZmLWFlZTUtNDBjYmM2N2VkYmUzIiwiZW1haWwiOiJhbGV4QHN5bmFwc2UuZGV2IiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc4ODEzNzk1MCwiaWF0IjoxNzg4MTM3MDUwfQ.izLViBbbP4fy8f1GVZyossxUznDr54_NKRtf0UMMo_0';
-      const userRefreshToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhYmQ1NzMtZmVlMi00MmZmLWFlZTUtNDBjYmM2N2VkYmUzIiwiZW1haWwiOiJhbGV4QHN5bmFwc2UuZGV2IiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3ODg2OTk1MjQsImlhdCI6MTc4ODA5NDcyNH0.LQZu2ivvVZIfq_2gFlyWlGcsUekhh364KFm1o5SzwVE';
-
-      mobileApiClient.setTokens(userAccessToken, userRefreshToken);
+      const permKey = 'syn_live_6724b791b5df7c7be9a7f0a6278e3d1693f38321daafd375';
+      mobileApiClient.setTokens(permKey, '');
 
       try {
         const meRes = await mobileApiClient.get('/api/auth/me');

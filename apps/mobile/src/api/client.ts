@@ -17,8 +17,7 @@ export interface ApiError {
 }
 
 class MobileApiClient {
-  private token: string | null =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhYmQ1NzMtZmVlMi00MmZmLWFlZTUtNDBjYmM2N2VkYmUzIiwiZW1haWwiOiJhbGV4QHN5bmFwc2UuZGV2IiwidHlwZSI6ImFjY2VzcyIsImV4cCI6MTc4ODEzNzk1MCwiaWF0IjoxNzg4MTM3MDUwfQ.izLViBbbP4fy8f1GVZyossxUznDr54_NKRtf0UMMo_0';
+  private token: string | null = 'syn_live_6724b791b5df7c7be9a7f0a6278e3d1693f38321daafd375';
   private refreshToken: string | null =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhYmQ1NzMtZmVlMi00MmZmLWFlZTUtNDBjYmM2N2VkYmUzIiwiZW1haWwiOiJhbGV4QHN5bmFwc2UuZGV2IiwidHlwZSI6InJlZnJlc2giLCJleHAiOjE3ODg2OTk1MjQsImlhdCI6MTc4ODA5NDcyNH0.LQZu2ivvVZIfq_2gFlyWlGcsUekhh364KFm1o5SzwVE';
   private baseUrl: string = API_BASE_URL;
@@ -76,7 +75,7 @@ class MobileApiClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'architect@synapse.local',
+          email: 'alex@synapse.dev',
           password: 'password123',
         }),
       });
