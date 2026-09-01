@@ -17,6 +17,7 @@
         "backgroundColor": "#09090B"
       },
       "package": "com.gfpc.synapse",
+      "usesCleartextTraffic": true,
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "VIBRATE"]
     },
     "updates": {
