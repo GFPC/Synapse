@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Project, User } from '../../types';
-import { THEME } from '../../theme/tokens';
 
 interface Props {
   activeProject: Project | null;
@@ -57,7 +56,7 @@ export const HeaderBar: React.FC<Props> = ({
           activeOpacity={0.7}
           onPress={onOpenCreateNode}
         >
-          <Text style={styles.addButtonIcon}>?</Text>
+          <Text style={styles.addButtonIcon}>+</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -108,7 +107,8 @@ const styles = StyleSheet.create({
   },
   chevron: {
     color: '#8A8A94',
-    fontSize: 12,
+    fontSize: 10,
+    marginLeft: 2,
   },
   rightActions: {
     flexDirection: 'row',

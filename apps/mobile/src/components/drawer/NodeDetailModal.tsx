@@ -150,7 +150,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                 style={styles.headerBtn}
                 onPress={() => setIsEditing(!isEditing)}
               >
-                <Text style={styles.headerBtnText}>{isEditing ? 'Cancel' : '? Edit'}</Text>
+                <Text style={styles.headerBtnText}>{isEditing ? 'Cancel' : 'Edit'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
                 <Text style={styles.closeBtnText}>?</Text>
@@ -319,7 +319,7 @@ export const NodeDetailModal: React.FC<Props> = ({ node, visible, onClose }) => 
                     style={styles.addRelBtn}
                     onPress={() => openCreateRelationModal(node)}
                   >
-                    <Text style={styles.addRelBtnText}>? Add Relation</Text>
+                    <Text style={styles.addRelBtnText}>+ Add Relation</Text>
                   </TouchableOpacity>
                 </View>
 
